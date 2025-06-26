@@ -19,13 +19,31 @@ import {
 import { Input } from '@/components/ui/input'
 import { loginSchema } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 export function LoginForm({ onSubmit }: ILoginFormProps) {
   const form = useForm({
     mode: 'onChange',
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   })
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+
+  const onAction = async (formData: FormData) => {
+    const isValid = await form.trigger()
+
+    if (!isValid) return
+
+    setIsSubmitting(true)
+    await onSubmit(formData)
+
+    form.reset()
+    setIsSubmitting(false)
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,7 +56,7 @@ export function LoginForm({ onSubmit }: ILoginFormProps) {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+            <form action={onAction}>
               <div className="grid gap-6">
                 <div className="flex flex-col gap-4">
                   <Button type="button" variant="outline" className="w-full">
@@ -104,7 +122,7 @@ export function LoginForm({ onSubmit }: ILoginFormProps) {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={form.formState.isSubmitting}
+                    disabled={isSubmitting}
                   >
                     Login
                   </Button>
