@@ -2,7 +2,7 @@ import { GalleryVerticalEnd } from 'lucide-react'
 
 import { LoginForm } from '@/components/login-form'
 
-import { login } from './actions'
+import { signIn } from '../actions'
 
 export default function LoginPage() {
   return (
@@ -14,7 +14,7 @@ export default function LoginPage() {
           </div>
           Acme Inc.
         </a>
-        <LoginForm onSubmit={login} />
+        <LoginForm onSubmit={signIn} />
       </div>
     </div>
   )
