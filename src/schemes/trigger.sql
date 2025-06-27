@@ -1,4 +1,4 @@
--- inspect sql editor
+-- ? can be run using sql editor
 -- sync public.profiles with auth.users
 
 -- === create ===
