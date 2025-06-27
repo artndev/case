@@ -26,4 +26,4 @@ create trigger on_auth_user_created
 -- === update ===
 -- it is not worth to update public.profiles whenever auth.users are updated
 -- because public.profiles are only used to display core values like email and id
--- which are not expected to change
+-- which are not expected to be changed
