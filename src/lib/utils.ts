@@ -7,13 +7,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const loginSchema = z.object({
+export const authSchema = z.object({
   email: z.string().nonempty().email(),
   password: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
 })
 
-export const signupSchema = z.object({})
+export const resetPasswordSchema = z.object({
+  email: authSchema.shape.email,
+})
 
-declare global {
-  export type TLoginSchema = z.infer<typeof loginSchema>
-}
+export const updatePasswordSchema = z.object({
+  password: authSchema.shape.password,
+})

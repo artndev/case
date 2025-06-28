@@ -1,6 +1,6 @@
 'use client'
 
-import { signInWithOAuth } from '@/app/(auth)/auth/actions'
+import { signInWithOAuth } from '@/app/(auth)/actions'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { loginSchema } from '@/lib/utils'
+import { authSchema } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -27,7 +27,7 @@ import { useForm } from 'react-hook-form'
 export function AuthForm({ onSubmit, type }: I_AuthFormProps) {
   const form = useForm({
     mode: 'onChange',
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(authSchema),
     defaultValues: {
       email: '',
       password: '',
@@ -92,12 +92,14 @@ export function AuthForm({ onSubmit, type }: I_AuthFormProps) {
                       <FormItem>
                         <FormLabel>
                           <span>Password</span>
-                          <a
-                            href="#"
-                            className="font-normal ml-auto text-sm underline-offset-4 hover:underline"
-                          >
-                            Forgot your password?
-                          </a>
+                          {type === 'sign-in' && (
+                            <Link
+                              href="/auth/reset-password"
+                              className="font-normal ml-auto text-sm underline-offset-4 hover:underline"
+                            >
+                              Forgot your password?
+                            </Link>
+                          )}
                         </FormLabel>
                         <FormControl>
                           <Input type="password" {...field} />
@@ -129,7 +131,7 @@ export function AuthForm({ onSubmit, type }: I_AuthFormProps) {
               <div className="text-center text-sm">
                 Don&apos;t have an account?{' '}
                 <Link
-                  href={`/auth/${type !== 'sign-in' ? 'sign-in' : 'sign-up'}`}
+                  href={`/${type !== 'sign-in' ? 'sign-in' : 'sign-up'}`}
                   className="underline underline-offset-4"
                 >
                   {type !== 'sign-in' ? 'Sign in' : 'Sign up'}
