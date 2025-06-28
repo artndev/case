@@ -32,10 +32,11 @@ export async function signUp(formData: FormData) {
 
   const { error } = await supabase.auth.signUp(data)
 
+  console.log(error)
   if (error) redirect('/error')
 
-  revalidatePath('/', 'layout')
-  redirect('/')
+  // no need to use revalidatePath here as user is redirected to status page
+  redirect('/auth/confirm/status')
 }
 
 export async function signInWithOAuth(provider: Provider) {
