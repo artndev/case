@@ -17,17 +17,18 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { updatePasswordSchema } from '@/lib/utils'
+import { resetPasswordSchema } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { I_FormProps } from '../_types'
 
-export function UpdatePasswordForm({ onSubmit }: I_ResetFormProps) {
+export function ResetPasswordForm({ onSubmit }: I_FormProps) {
   const form = useForm({
     mode: 'onChange',
-    resolver: zodResolver(updatePasswordSchema),
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      password: '',
+      email: '',
     },
   })
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
@@ -47,9 +48,9 @@ export function UpdatePasswordForm({ onSubmit }: I_ResetFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">Make changes</CardTitle>
+        <CardTitle className="text-xl">Before we start</CardTitle>
         <CardDescription>
-          Enter your new password below to update your account
+          Enter your email below to receive a password reset link
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -59,15 +60,19 @@ export function UpdatePasswordForm({ onSubmit }: I_ResetFormProps) {
               <div className="flex flex-col gap-6">
                 <FormField
                   control={form.control}
-                  name="password"
+                  name="email"
                   rules={{
                     required: true,
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="mail@example.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -75,7 +80,7 @@ export function UpdatePasswordForm({ onSubmit }: I_ResetFormProps) {
                 />
                 <div className="flex flex-col gap-3">
                   <Button type="submit" disabled={isSubmitting}>
-                    Update
+                    Send
                   </Button>
                 </div>
               </div>

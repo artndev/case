@@ -1,4 +1,4 @@
-import { AuthForm } from '@/components/auth-form'
+import { SignUpForm } from '../_components/sign-up-form'
 import { GalleryVerticalEnd } from 'lucide-react'
 import { signUp } from '../actions'
 
@@ -12,7 +12,7 @@ export default function SignInPage() {
           </div>
           Art Inc.
         </a>
-        <AuthForm onSubmit={signUp} type={'sign-up'} />
+        <SignUpForm onSubmit={signUp} />
       </div>
     </div>
   )

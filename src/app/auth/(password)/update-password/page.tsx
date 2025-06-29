@@ -1,8 +1,8 @@
-import { ResetPasswordForm } from '@/components/reset-password-form'
+import { UpdatePasswordForm } from '@/app/auth/(password)/_components/update-password-form'
 import { GalleryVerticalEnd } from 'lucide-react'
-import { resetPassword } from '../../../actions'
+import { updatePassword } from '../actions'
 
-export default function ResetPasswordPage() {
+export default function UpdatePasswordPage() {
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
@@ -12,7 +12,7 @@ export default function ResetPasswordPage() {
           </div>
           Art Inc.
         </a>
-        <ResetPasswordForm onSubmit={resetPassword} />
+        <UpdatePasswordForm onSubmit={updatePassword} />
       </div>
     </div>
   )

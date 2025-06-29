@@ -32,7 +32,6 @@ export async function signUp(formData: FormData) {
 
   const { error } = await supabase.auth.signUp(data)
 
-  console.log(error)
   if (error) redirect('/error')
 
   // no need to use revalidatePath here as user is redirected to status page
@@ -63,7 +62,9 @@ export async function resetPassword(formData: FormData) {
 
   const { error } = await supabase.auth.resetPasswordForEmail(email)
 
-  if (error) console.log(error)
+  if (error) redirect('/error')
+
+  redirect('/auth/confirm/status')
 }
 
 export async function updatePassword(formData: FormData) {

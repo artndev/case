@@ -1,5 +1,3 @@
-import { GalleryVerticalEnd, Mail } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -7,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { GalleryVerticalEnd, Mail } from 'lucide-react'
 
 export default function Status() {
   return (
@@ -24,12 +23,13 @@ export default function Status() {
               Confirmation email has been sent
             </CardTitle>
             <CardDescription>
-              Open your email box and check it out
+              Open your email box to unfold it. Do not forget to check the spam
+              folder out!
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
-            <div className="w-[100px] h-[100px]">
-              <Mail size={'100%'} />
+            <div className="flex justify-center items-center w-[100px] h-[100px]">
+              <Mail size={'80%'} />
             </div>
           </CardContent>
         </Card>

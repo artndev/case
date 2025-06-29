@@ -18,16 +18,17 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { authSchema } from '@/lib/utils'
+import { signUpSchema } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { I_FormProps } from '../_types'
 
-export function AuthForm({ onSubmit, type }: I_AuthFormProps) {
+export function SignUpForm({ onSubmit }: I_FormProps) {
   const form = useForm({
     mode: 'onChange',
-    resolver: zodResolver(authSchema),
+    resolver: zodResolver(signUpSchema),
     defaultValues: {
       email: '',
       password: '',
@@ -50,10 +51,9 @@ export function AuthForm({ onSubmit, type }: I_AuthFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">Welcome back</CardTitle>
+        <CardTitle className="text-xl">Welcome</CardTitle>
         <CardDescription>
-          Enter your email below to {type === 'sign-in' ? 'sign in' : 'sign up'}{' '}
-          to your account
+          Enter your credentials below to sign up
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -81,37 +81,41 @@ export function AuthForm({ onSubmit, type }: I_AuthFormProps) {
                     </FormItem>
                   )}
                 />
-                <div className="flex flex-col gap-3">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    rules={{
-                      required: true,
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          <span>Password</span>
-                          {type === 'sign-in' && (
-                            <Link
-                              href="/auth/reset-password"
-                              className="font-normal ml-auto text-sm underline-offset-4 hover:underline"
-                            >
-                              Forgot your password?
-                            </Link>
-                          )}
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  rules={{
+                    required: true,
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  rules={{
+                    required: true,
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Repeat password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="flex flex-col gap-3">
                   <Button type="submit" disabled={isSubmitting}>
-                    {type === 'sign-in' ? 'Sign in' : 'Sign up'}
+                    Sign up
                   </Button>
                   <Button
                     type="submit"
@@ -129,12 +133,12 @@ export function AuthForm({ onSubmit, type }: I_AuthFormProps) {
                 </div>
               </div>
               <div className="text-center text-sm">
-                Don&apos;t have an account?{' '}
+                Have an account?{' '}
                 <Link
-                  href={`/${type !== 'sign-in' ? 'sign-in' : 'sign-up'}`}
+                  href={`/sign-in`}
                   className="underline underline-offset-4"
                 >
-                  {type !== 'sign-in' ? 'Sign in' : 'Sign up'}
+                  Sign in
                 </Link>
               </div>
             </div>
