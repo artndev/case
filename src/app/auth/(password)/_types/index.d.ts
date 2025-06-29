@@ -1,5 +1,5 @@
 export interface I_FormProps {
-  onSubmit: (formData: FormData) => Promise<any> | void
+  onSubmit: (formData: FormData) => Promise<void> | void
 }
 
 export {}

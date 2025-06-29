@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button'
-import Image from 'next/image'
-import { signOut } from './(auth)/actions'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import { signOut } from './(auth)/actions'
 
 export default async function Home() {
   const supabase = await createClient()

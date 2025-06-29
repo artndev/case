@@ -1,4 +1,4 @@
-import regexes from '@/regexes'
+import * as regexes from '@/regexes'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { z } from 'zod'
