@@ -4,7 +4,6 @@ import { createClient } from '@/utils/supabase/server'
 import type { Provider } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-// import pool from '@/app/pool'
 
 export async function signIn(formData: FormData) {
   const supabase = await createClient()
@@ -73,17 +72,6 @@ export async function updatePassword(formData: FormData) {
   const password = formData.get('password') as string
 
   const { error } = await supabase.auth.updateUser({ password: password })
-
-  if (error) redirect('/error')
-
-  revalidatePath('/', 'layout')
-  redirect('/')
-}
-
-export async function signOut() {
-  const supabase = await createClient()
-
-  const { error } = await supabase.auth.signOut()
 
   if (error) redirect('/error')
 
