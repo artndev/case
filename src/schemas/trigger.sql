@@ -12,7 +12,7 @@ begin
   insert into public.profiles (id, email)
   values (
     new.id, 
-    new.raw_user_meta_data ->> 'email', 
+    new.email
   );
   return new;
 end;

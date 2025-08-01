@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { cn, signUpSchema } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Eye, EyeClosed } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -29,6 +30,7 @@ export function SignUpForm({ onSubmit, className, ...props }: I_FormProps) {
     },
   })
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [isPasswordHidden, setIsPasswordHidden] = useState<boolean>(true)
 
   const onAction = async (formData: FormData) => {
     const isValid = await form.trigger()
@@ -50,7 +52,9 @@ export function SignUpForm({ onSubmit, className, ...props }: I_FormProps) {
             <form action={onAction} className="p-6 md:p-8">
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                  <h1 className="text-xl font-bold leading-none">Greetings!</h1>
+                  <h1 className="text-xl font-semibold leading-none">
+                    Greetings!
+                  </h1>
                   <p className="text-sm text-muted-foreground text-balance">
                     Enter the credentials below to take your case
                   </p>
@@ -82,9 +86,23 @@ export function SignUpForm({ onSubmit, className, ...props }: I_FormProps) {
                   render={({ field }) => (
                     <FormItem className="grid gap-3">
                       <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" {...field} />
-                      </FormControl>
+                      <div className="relative">
+                        <FormControl>
+                          <Input
+                            type={!isPasswordHidden ? 'text' : 'password'}
+                            {...field}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          className="absolute top-[50%] right-0 -translate-y-[50%] -translate-x-[1px] h-[calc(100%-2px)] border-0!"
+                          variant={'outline'}
+                          size={'icon'}
+                          onClick={() => setIsPasswordHidden(!isPasswordHidden)}
+                        >
+                          {!isPasswordHidden ? <Eye /> : <EyeClosed />}
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -98,7 +116,10 @@ export function SignUpForm({ onSubmit, className, ...props }: I_FormProps) {
                     <FormItem>
                       <FormLabel>Repeat your password</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input
+                          type={!isPasswordHidden ? 'text' : 'password'}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -128,7 +149,7 @@ export function SignUpForm({ onSubmit, className, ...props }: I_FormProps) {
                   Have an account?{' '}
                   <Link
                     href={`/sign-in`}
-                    className="underline underline-offset-4"
+                    className="font-semibold underline underline-offset-4"
                   >
                     Sign in
                   </Link>

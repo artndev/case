@@ -1,39 +1,28 @@
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { GalleryVerticalEnd, Mail } from 'lucide-react'
+import Image from 'next/image'
 
 export default function Status() {
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <a href="#" className="flex items-center gap-2 self-center font-medium">
-          <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-sm">
-            <GalleryVerticalEnd className="size-4" />
-          </div>
-          Art Inc.
-        </a>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">
-              Confirmation email has been sent
-            </CardTitle>
-            <CardDescription>
-              Open your email box to unfold it. Do not forget to check the spam
-              folder out!
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <div className="flex justify-center items-center w-[100px] h-[100px]">
-              <Mail size={'80%'} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="w-full max-w-sm pt-0 overflow-hidden">
+        <div className="relative w-full h-[250px]">
+          <Image src="/cats.gif" alt="cats" fill={true} objectFit="cover" />
+        </div>
+        <CardHeader className="flex flex-col gap-2">
+          <CardTitle className="text-xl leading-none">
+            Thanks for joining!
+          </CardTitle>
+          <CardDescription>
+            Check your email inbox for the next steps. If it&apos;s not there,
+            please take a look at the spam folder!
+          </CardDescription>
+        </CardHeader>
+      </Card>
     </div>
   )
 }
