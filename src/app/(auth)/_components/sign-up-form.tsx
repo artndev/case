@@ -1,14 +1,7 @@
 'use client'
 
-import { signInWithOAuth } from '@/app/(auth)/actions'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -18,14 +11,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { signUpSchema } from '@/lib/utils'
+import { cn, signUpSchema } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { I_FormProps } from '../_types'
+import { signInWithOAuth } from '../actions'
 
-export function SignUpForm({ onSubmit }: I_FormProps) {
+export function SignUpForm({ onSubmit, className, ...props }: I_FormProps) {
   const form = useForm({
     mode: 'onChange',
     resolver: zodResolver(signUpSchema),
@@ -49,26 +43,25 @@ export function SignUpForm({ onSubmit }: I_FormProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Welcome</CardTitle>
-        <CardDescription>
-          Enter your credentials below to sign up
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form action={onAction}>
-            <div className="flex flex-col gap-6">
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
+      <Card className="overflow-hidden p-0">
+        <CardContent className="grid p-0 md:grid-cols-2">
+          <Form {...form}>
+            <form action={onAction} className="p-6 md:p-8">
               <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-xl font-bold leading-none">Greetings!</h1>
+                  <p className="text-sm text-muted-foreground text-balance">
+                    Enter the credentials below to take your case
+                  </p>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="email"
-                  rules={{
-                    required: true,
-                  }}
+                  rules={{ required: true }}
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="grid gap-3">
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
@@ -81,14 +74,13 @@ export function SignUpForm({ onSubmit }: I_FormProps) {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name="password"
-                  rules={{
-                    required: true,
-                  }}
+                  rules={{ required: true }}
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="grid gap-3">
                       <FormLabel>Password</FormLabel>
                       <FormControl>
                         <Input type="password" {...field} />
@@ -97,15 +89,14 @@ export function SignUpForm({ onSubmit }: I_FormProps) {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name="confirmPassword"
-                  rules={{
-                    required: true,
-                  }}
+                  rules={{ required: true }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Repeat password</FormLabel>
+                      <FormLabel>Repeat your password</FormLabel>
                       <FormControl>
                         <Input type="password" {...field} />
                       </FormControl>
@@ -113,6 +104,7 @@ export function SignUpForm({ onSubmit }: I_FormProps) {
                     </FormItem>
                   )}
                 />
+
                 <div className="flex flex-col gap-3">
                   <Button type="submit" disabled={isSubmitting}>
                     Sign up
@@ -131,20 +123,29 @@ export function SignUpForm({ onSubmit }: I_FormProps) {
                     Continue with Google
                   </Button>
                 </div>
+
+                <div className="text-center text-sm">
+                  Have an account?{' '}
+                  <Link
+                    href={`/sign-in`}
+                    className="underline underline-offset-4"
+                  >
+                    Sign in
+                  </Link>
+                </div>
               </div>
-              <div className="text-center text-sm">
-                Have an account?{' '}
-                <Link
-                  href={`/sign-in`}
-                  className="underline underline-offset-4"
-                >
-                  Sign in
-                </Link>
-              </div>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </form>
+          </Form>
+
+          <div className="bg-muted relative hidden md:block">
+            <img
+              src="https://placehold.co/1000x500.png"
+              alt="Image"
+              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

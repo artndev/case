@@ -48,9 +48,9 @@ export function ResetPasswordForm({ onSubmit }: I_FormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">Before we start</CardTitle>
+        <CardTitle className="text-xl">Reset your password</CardTitle>
         <CardDescription>
-          Enter your email below to receive a password reset link
+          To which email should we send the reset link to?
         </CardDescription>
       </CardHeader>
       <CardContent>

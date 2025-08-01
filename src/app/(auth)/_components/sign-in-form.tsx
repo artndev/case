@@ -1,14 +1,7 @@
 'use client'
 
-import { signInWithOAuth } from '@/app/(auth)/actions'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -18,14 +11,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { signInSchema } from '@/lib/utils'
+import { cn, signInSchema } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { I_FormProps } from '../_types'
+import { signInWithOAuth } from '../actions'
 
-export function SignInForm({ onSubmit }: I_FormProps) {
+export function SignInForm({ onSubmit, className, ...props }: I_FormProps) {
   const form = useForm({
     mode: 'onChange',
     resolver: zodResolver(signInSchema),
@@ -49,26 +43,27 @@ export function SignInForm({ onSubmit }: I_FormProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Welcome back</CardTitle>
-        <CardDescription>
-          Enter your email below to sign in to your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form action={onAction}>
-            <div className="flex flex-col gap-6">
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
+      <Card className="overflow-hidden p-0">
+        <CardContent className="grid p-0 md:grid-cols-2">
+          <Form {...form}>
+            <form action={onAction} className="p-6 md:p-8">
               <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-xl font-bold leading-none">
+                    Welcome back!
+                  </h1>
+                  <p className="text-sm text-muted-foreground text-balance">
+                    Enter the credentials below to open your case
+                  </p>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="email"
-                  rules={{
-                    required: true,
-                  }}
+                  rules={{ required: true }}
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="grid gap-3">
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
@@ -81,32 +76,30 @@ export function SignInForm({ onSubmit }: I_FormProps) {
                     </FormItem>
                   )}
                 />
-                <div className="flex flex-col gap-3">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    rules={{
-                      required: true,
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          <span>Password</span>
-                          <Link
-                            href="/auth/reset-password"
-                            className="font-normal ml-auto text-sm underline-offset-4 hover:underline"
-                          >
-                            Forgot your password?
-                          </Link>
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <FormItem className="grid gap-3">
+                      <FormLabel>
+                        Password
+                        <Link
+                          href="/auth/reset-password"
+                          className="ml-auto text-sm underline-offset-2 hover:underline"
+                        >
+                          Forgot your password?
+                        </Link>
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="flex flex-col gap-3">
                   <Button type="submit" disabled={isSubmitting}>
                     Sign in
@@ -125,20 +118,29 @@ export function SignInForm({ onSubmit }: I_FormProps) {
                     Continue with Google
                   </Button>
                 </div>
+
+                <div className="text-center text-sm">
+                  Don&apos;t have an account?{' '}
+                  <Link
+                    href={`/sign-up`}
+                    className="underline underline-offset-4"
+                  >
+                    Sign up
+                  </Link>
+                </div>
               </div>
-              <div className="text-center text-sm">
-                Don&apos;t have an account?{' '}
-                <Link
-                  href={`/sign-up`}
-                  className="underline underline-offset-4"
-                >
-                  Sign up
-                </Link>
-              </div>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </form>
+          </Form>
+
+          <div className="bg-muted relative hidden md:block">
+            <img
+              src="https://placehold.co/1000x500.png"
+              alt="Image"
+              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
