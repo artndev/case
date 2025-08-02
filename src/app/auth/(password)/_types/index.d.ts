@@ -1,5 +1,6 @@
-export interface I_FormProps {
-  onSubmit: (formData: FormData) => Promise<void> | void
+export interface I_FormProps
+  extends Omit<React.ComponentProps<'div'>, 'onSubmit'> {
+  onSubmit: (formData: FormData) => Promise<void>
 }
 
 export {}

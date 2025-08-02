@@ -15,11 +15,11 @@ export default function Status() {
         </div>
         <CardHeader className="flex flex-col gap-2">
           <CardTitle className="text-xl leading-none">
-            Thanks for joining!
+            Instructions have been sent
           </CardTitle>
           <CardDescription>
-            Check your email inbox for the next steps. If it&apos;s not there,
-            please take a look at the spam folder!
+            Check your email inbox for the next steps. If they&apos;re not
+            there, please take a look at the spam folder!
           </CardDescription>
         </CardHeader>
       </Card>

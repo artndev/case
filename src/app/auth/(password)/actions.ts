@@ -13,7 +13,7 @@ export async function resetPassword(formData: FormData) {
 
   if (error) redirect('/error')
 
-  redirect('/auth/confirm/status')
+  redirect('/auth/success')
 }
 
 export async function updatePassword(formData: FormData) {

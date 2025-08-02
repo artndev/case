@@ -34,7 +34,7 @@ export async function signUp(formData: FormData) {
   if (error) redirect('/error')
 
   // no need to use revalidatePath here as user is redirected to status page
-  redirect('/auth/confirm/status')
+  redirect('/auth/success')
 }
 
 export async function signInWithOAuth(provider: Provider) {
@@ -63,7 +63,7 @@ export async function resetPassword(formData: FormData) {
 
   if (error) redirect('/error')
 
-  redirect('/auth/confirm/status')
+  redirect('/auth/success')
 }
 
 export async function updatePassword(formData: FormData) {
