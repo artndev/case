@@ -23,6 +23,10 @@ export const signUpSchema = z
     path: ['confirmPassword'],
   })
 
+export const caseNameSchema = z.object({
+  casename: z.string().nonempty(),
+})
+
 export const resetPasswordSchema = z.object({
   email: signInSchema.shape.email,
 })

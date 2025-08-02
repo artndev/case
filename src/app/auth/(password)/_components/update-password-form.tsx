@@ -41,11 +41,14 @@ export function UpdatePasswordForm({
   const [isPasswordHidden, setIsPasswordHidden] = useState<boolean>(true)
 
   const onAction = async (formData: FormData) => {
-    const isValid = await form.trigger()
-
-    if (!isValid) return
-
     setIsSubmitting(true)
+
+    const isValid = await form.trigger()
+    if (!isValid) {
+      setIsSubmitting(false)
+      return
+    }
+
     await onSubmit(formData)
 
     form.reset()
@@ -64,7 +67,9 @@ export function UpdatePasswordForm({
         <CardTitle className="text-xl leading-none">
           Update your password
         </CardTitle>
-        <CardDescription>Enter your new password below</CardDescription>
+        <CardDescription>
+          Enter your new password in the field below
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

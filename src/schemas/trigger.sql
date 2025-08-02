@@ -9,9 +9,10 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email)
+  insert into public.profiles (id, casename, email)
   values (
     new.id, 
+    new.raw_user_meta_data ->> 'casename',
     new.email
   );
   return new;

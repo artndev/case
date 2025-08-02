@@ -5,6 +5,20 @@ import type { Provider } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+export async function validateCaseName(caseName: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('casename', caseName)
+    .maybeSingle()
+
+  if (error) return null
+
+  return data
+}
+
 export async function signIn(formData: FormData) {
   const supabase = await createClient()
 
@@ -27,23 +41,39 @@ export async function signUp(formData: FormData) {
   const data = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
+    casename: formData.get('casename') as string,
   }
 
-  const { error } = await supabase.auth.signUp(data)
+  const { casename, ...signUpPayload } = data
+  const {
+    data: { user },
+    error: signUpError,
+  } = await supabase.auth.signUp(signUpPayload)
 
-  if (error) redirect('/error')
+  if (signUpError || !user) redirect('/error')
+
+  const { password, ...insertPayload } = data
+  const { error: insertError } = await supabase.from('profiles').insert({
+    id: user.id,
+    ...insertPayload,
+  })
+
+  if (insertError) redirect('/error')
 
   // no need to use revalidatePath here as user is redirected to status page
   redirect('/auth/success')
 }
 
-export async function signInWithOAuth(provider: Provider) {
+export async function signInWithOAuth(provider: Provider, caseName?: string) {
   const supabase = await createClient()
+
+  const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`)
+  if (caseName) url.searchParams.append('casename', caseName)
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      redirectTo: url.toString(),
     },
   })
 
