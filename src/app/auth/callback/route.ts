@@ -41,13 +41,6 @@ export async function GET(request: Request) {
       })
 
       if (insertError) return NextResponse.redirect(`${origin}/error`)
-    } else {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ casename: caseName })
-        .eq('id', session.user.id)
-
-      if (updateError) return NextResponse.redirect(`${origin}/error`)
     }
   }
 
