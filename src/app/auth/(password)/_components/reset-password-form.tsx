@@ -17,7 +17,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { cn, resetPasswordSchema } from '@/lib/utils'
+import { resetPasswordSchema } from '@/lib/schemas'
+import { cn } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Image from 'next/image'
 import { useState } from 'react'
