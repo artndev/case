@@ -1,6 +1,7 @@
+import { createAdminClient } from '@/utils/supabase/admin'
+import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
 // The client you created from the Server-Side Auth instructions
-import { createClient } from '@/utils/supabase/server'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -22,8 +23,10 @@ export async function GET(request: Request) {
 
   if (sessionError || !session) return NextResponse.redirect(`${origin}/error`)
 
-  /* logic of "casename" field updates */
+  const supabaseAdmin = await createAdminClient()
   const caseName = searchParams.get('casename')
+
+  // logic of "casename" field updates
   if (caseName) {
     const { data, error: selectError } = await supabase
       .from('profiles')
@@ -31,7 +34,8 @@ export async function GET(request: Request) {
       .eq('id', session.user.id)
       .maybeSingle()
 
-    if (selectError) return NextResponse.redirect(`${origin}/error`)
+    console.log('SELECT ERROR: ', selectError)
+    if (selectError) return NextResponse.redirect(`${origin}/sign-out`)
 
     if (!data) {
       const { error: insertError } = await supabase.from('profiles').insert({
@@ -40,7 +44,11 @@ export async function GET(request: Request) {
         email: session.user.email,
       })
 
-      if (insertError) return NextResponse.redirect(`${origin}/error`)
+      console.log('INSERT ERROR: ', insertError)
+      if (insertError) {
+        await supabaseAdmin.auth.admin.deleteUser(session.user.id)
+        return NextResponse.redirect(`${origin}/error`)
+      }
     }
   }
 

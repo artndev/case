@@ -17,20 +17,24 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { caseNameSchema } from '@/lib/utils'
+import { caseNameSchema } from '@/lib/schemas'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { I_FormProps } from '../_types'
 import { validateCaseName } from '../actions'
 
-export function CaseNameForm({ onSubmit }: I_FormProps) {
+export function CaseNameForm({
+  onSubmit,
+  defaultValues,
+}: I_FormProps<z.infer<typeof caseNameSchema>>) {
   const form = useForm({
     mode: 'onChange',
     resolver: zodResolver(caseNameSchema),
-    defaultValues: {
+    defaultValues: defaultValues ?? {
       casename: '',
     },
   })
@@ -63,7 +67,7 @@ export function CaseNameForm({ onSubmit }: I_FormProps) {
   }
 
   return (
-    <Card className="w-full max-w-sm pt-0 overflow-hidden">
+    <Card className="overflow-hidden pt-0">
       <div className="relative w-full h-[250px]">
         <Image src="/cats.gif" alt="cats" fill={true} objectFit="cover" />
       </div>

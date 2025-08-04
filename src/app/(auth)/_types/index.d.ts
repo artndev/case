@@ -1,5 +1,6 @@
-export interface I_FormProps {
-  onSubmit: (formData: FormData) => void
+export interface I_FormProps<T> {
+  onSubmit: (formData: FormData) => Promise<void>
+  defaultValues?: T
 }
 
 export {}

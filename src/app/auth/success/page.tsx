@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/card'
 import Image from 'next/image'
 
-export default function Status() {
+export default function Success() {
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <Card className="w-full max-w-sm pt-0 overflow-hidden">
