@@ -14,7 +14,7 @@ const Draggable: React.FC<
   return (
     <button
       className={cn(
-        'flex justify-center items-center h-[100px] p-6 rounded-md bg-muted-foreground text-background',
+        'flex justify-center break-inside-avoid items-center h-[100px] p-6 rounded-md bg-muted-foreground text-background',
         className
       )}
       ref={setNodeRef}

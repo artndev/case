@@ -1,74 +1,49 @@
 'use client'
 
-import { closestCorners, DndContext, DragOverlay } from '@dnd-kit/core'
+import { cn } from '@/lib/utils'
+import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import Draggable from './_components/draggable'
 import Droppable from './_components/droppable'
-import { cn } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 const initialItems = [
   {
     id: 1,
     content: 'Drag me 1',
-    className: 'w-[100px] h-[100px]',
+    className: 'col-span-2 row-span-2',
     parent: null,
   },
   {
     id: 2,
     content: 'Drag me 2',
-    className: 'w-[200px] h-[200px]',
+    className: 'col-span-2 row-span-2',
     parent: null,
   },
   {
     id: 3,
     content: 'Drag me 3',
-    className: 'w-[300px] h-[300px]',
+    className: 'col-span-2 row-span-2',
     parent: null,
   },
   {
     id: 4,
     content: 'Drag me 4',
-    className: 'w-[300px] h-[300px]',
+    className: 'col-span-2 row-span-2',
     parent: null,
   },
   {
     id: 5,
     content: 'Drag me 5',
-    className: 'w-[300px] h-[300px]',
+    className: 'col-span-1 row-span-1',
     parent: null,
-  },
-]
-
-const droppableIds = [
-  {
-    id: 1,
-  },
-  {
-    id: 2,
-  },
-  {
-    id: 3,
-  },
-  {
-    id: 4,
-  },
-  {
-    id: 5,
-  },
-  {
-    id: 6,
   },
 ]
 
 const Test = () => {
   const [items, setItems] = useState<typeof initialItems>(initialItems)
   const [activeId, setActiveId] = useState<number | null>(null)
-  const [overId, setOverId] = useState<number | null>(null)
-
-  const hasChild = (id: number) => {
-    return items.some(item => item.parent === id)
-  }
 
   const handleDragStart = (event: any) => {
     const { active } = event
@@ -101,29 +76,35 @@ const Test = () => {
 
   return (
     <DndContext
-      collisionDetection={closestCorners}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
-      onDragOver={({ over }) => setOverId(over ? (over.id as number) : null)}
     >
       <div className="flex flex-col gap-12 p-6 relative">
-        <div className="grid grid-cols-[repeat(3,_minmax(0,max-content))] auto-rows-auto gap-[10px] w-[930px]">
-          {droppableIds.map(droppable => {
-            console.log(hasChild(droppable.id), droppable.id)
+        <div className="flex gap-6">
+          <Button>Add small</Button>
+          <Button>Add medium</Button>
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fill,_minmax(100px,_1fr))] auto-rows-[100px] gap-[10px] grid-flow-dense w-full max-w-[930px] h-[540px]">
+          {Array.from({ length: 10 }).map((_, i) => {
+            const id = i + 1
+            const item = items.find(item => item.parent === id)
 
             return (
               <Droppable
-                className="flex justify-start items-start min-w-[100px] min-h-[100px]"
-                key={droppable.id}
-                id={droppable.id}
+                className={cn(
+                  'flex justify-start items-start min-w-[100px] min-h-[100px]',
+                  item?.className
+                )}
+                key={id}
+                id={id}
               >
-                {items.filter(item => item.parent === droppable.id).length >
-                0 ? (
+                {items.filter(item => item.parent === id).length > 0 ? (
                   items
-                    .filter(item => item.parent === droppable.id)
-                    .map(({ id: itemId, content, className }) => (
-                      <Draggable className={className} key={itemId} id={itemId}>
+                    .filter(item => item.parent === id)
+                    .map(({ id: itemId, content }) => (
+                      <Draggable className="size-full" key={itemId} id={itemId}>
                         {content}
                       </Draggable>
                     ))
@@ -140,9 +121,9 @@ const Test = () => {
         <div className="flex flex-wrap gap-6">
           {items
             .filter(item => item.parent === null)
-            .map(({ id, content, className }) =>
+            .map(({ id, content }) =>
               activeId === id ? null : (
-                <Draggable className={className} key={id} id={id}>
+                <Draggable className="w-[100px] h-[100px]" key={id} id={id}>
                   {content}
                 </Draggable>
               )
@@ -158,8 +139,8 @@ const Test = () => {
           {activeId
             ? items
                 .filter(item => item.id === activeId)
-                .map(({ id, content, className }) => (
-                  <Draggable className={className} key={id} id={id}>
+                .map(({ id, content }) => (
+                  <Draggable className="size-full" key={id} id={id}>
                     {content}
                   </Draggable>
                 ))
