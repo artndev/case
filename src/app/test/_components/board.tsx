@@ -2,32 +2,25 @@
 
 import {
   DndContext,
+  DragStartEvent,
+  DragMoveEvent,
   DragEndEvent,
   DragOverlay,
-  DragStartEvent,
 } from '@dnd-kit/core'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Widget from './widget'
 import WidgetOverlay from './widget-overlay'
 
-declare global {
-  interface I_Widget {
-    id: number
-    size: 'sm' | 'md' | 'bg'
-    x: number
-    y: number
-  }
+interface I_Widget {
+  id: number
+  size: 'sm' | 'md' | 'bg'
+  x: number
+  y: number
 }
 
 const GRID_SIZE = 50
 const MAX_COLS = 12
 const MAX_ROWS = 6
-
-const initialWidgets = [
-  { id: 1, size: 'sm', x: 0, y: 0 },
-  { id: 2, size: 'md', x: 3, y: 0 },
-  { id: 3, size: 'bg', x: 0, y: 2 },
-] as I_Widget[]
 
 const sizeMap = {
   sm: { w: 3, h: 1 },
@@ -35,104 +28,201 @@ const sizeMap = {
   bg: { w: 9, h: 2 },
 }
 
+// Check if two widgets overlap on the grid
+function isOverlapping(a: I_Widget, b: I_Widget): boolean {
+  const sizeA = sizeMap[a.size]
+  const sizeB = sizeMap[b.size]
+  return !(
+    a.x + sizeA.w <= b.x ||
+    b.x + sizeB.w <= a.x ||
+    a.y + sizeA.h <= b.y ||
+    b.y + sizeB.h <= a.y
+  )
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(value, max))
+}
+
+function clampPosition(x: number, y: number, size: keyof typeof sizeMap) {
+  const s = sizeMap[size]
+  return {
+    x: clamp(x, 0, MAX_COLS - s.w),
+    y: clamp(y, 0, MAX_ROWS - s.h),
+  }
+}
+
+function pushWidgets(
+  widgets: I_Widget[],
+  moving: I_Widget,
+  excludeId?: number
+): I_Widget[] {
+  const newWidgets = widgets.map(w => ({ ...w }))
+  const grid = Array.from(
+    { length: MAX_ROWS },
+    () => Array(MAX_COLS).fill(null) as (number | null)[]
+  )
+
+  // Mark occupied cells
+  for (const w of newWidgets) {
+    if (w.id === moving.id) continue // Skip moving widget for now
+    const { w: width, h: height } = sizeMap[w.size]
+    for (let dy = 0; dy < height; dy++) {
+      for (let dx = 0; dx < width; dx++) {
+        const gx = w.x + dx
+        const gy = w.y + dy
+        if (gx < MAX_COLS && gy < MAX_ROWS) {
+          grid[gy][gx] = w.id
+        }
+      }
+    }
+  }
+
+  const resultWidgets = newWidgets.filter(w => w.id !== moving.id)
+  resultWidgets.push(moving)
+
+  const movedWidgets = new Set<number>()
+  const queue = [moving]
+
+  while (queue.length > 0) {
+    const current = queue.shift()!
+    const { w: width, h: height } = sizeMap[current.size]
+
+    // Check for overlaps
+    const overlapping = resultWidgets.filter(
+      w => w.id !== current.id && isOverlapping(current, w)
+    )
+
+    for (const overlap of overlapping) {
+      if (movedWidgets.has(overlap.id)) continue
+
+      // Find next empty spot
+      const spot = findNextEmptySpot(resultWidgets, overlap)
+      if (spot) {
+        overlap.x = spot.x
+        overlap.y = spot.y
+        queue.push(overlap)
+        movedWidgets.add(overlap.id)
+      }
+    }
+  }
+
+  return resultWidgets
+}
+
+function findNextEmptySpot(widgets: I_Widget[], widget: I_Widget) {
+  const { w: width, h: height } = sizeMap[widget.size]
+
+  for (let y = 0; y <= MAX_ROWS - height; y++) {
+    for (let x = 0; x <= MAX_COLS - width; x++) {
+      const candidate = { ...widget, x, y }
+      const overlap = widgets.some(
+        w => w.id !== widget.id && isOverlapping(candidate, w)
+      )
+      if (!overlap) return { x, y }
+    }
+  }
+  return null
+}
+
+const initialWidgets: I_Widget[] = [
+  { id: 1, size: 'sm', x: 0, y: 0 },
+  { id: 2, size: 'md', x: 3, y: 0 },
+  { id: 3, size: 'bg', x: 0, y: 2 },
+]
+
 const Board = () => {
   const [widgets, setWidgets] = useState<I_Widget[]>(initialWidgets)
   const [activeId, setActiveId] = useState<number | null>(null)
+  const [draggingWidgets, setDraggingWidgets] = useState<I_Widget[]>(widgets)
+  const initialPos = useRef<{ x: number; y: number } | null>(null)
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { delta, active } = event
+  const activeWidget = activeId
+    ? (draggingWidgets.find(w => w.id === activeId) ?? null)
+    : null
 
-    const draggedWidget = widgets.find(w => w.id === active.id)
-    if (!draggedWidget || !active.data.current) return
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as number)
+    setDraggingWidgets(widgets)
 
-    const { x: originalX, y: originalY, size } = active.data.current as I_Widget
-    const sizeInfo = sizeMap[size]
+    const widget = widgets.find(w => w.id === event.active.id)
+    initialPos.current = widget ? { x: widget.x, y: widget.y } : null
+  }
 
-    // Calculate the new snapped position based on original + delta
-    const dx = Math.round(delta.x / GRID_SIZE)
-    const dy = Math.round(delta.y / GRID_SIZE)
+  const handleDragMove = (event: DragMoveEvent) => {
+    if (activeId === null || !initialPos.current) return
 
-    let newX = originalX + dx
-    let newY = originalY + dy
+    const original = widgets.find(w => w.id === activeId)
+    if (!original) return
 
-    // Clamp to grid
-    newX = Math.max(0, Math.min(MAX_COLS - sizeInfo.w, newX))
-    newY = Math.max(0, Math.min(MAX_ROWS - sizeInfo.h, newY))
+    const deltaX = Math.round(event.delta.x / GRID_SIZE)
+    const deltaY = Math.round(event.delta.y / GRID_SIZE)
 
-    // Check for collisions
-    const isOverlapping = widgets.some(other => {
-      if (other.id === draggedWidget.id) return false
+    const newPos = clampPosition(
+      initialPos.current.x + deltaX,
+      initialPos.current.y + deltaY,
+      original.size
+    )
 
-      const otherSize = sizeMap[other.size]
-
-      return (
-        newX < other.x + otherSize.w &&
-        newX + sizeInfo.w > other.x &&
-        newY < other.y + otherSize.h &&
-        newY + sizeInfo.h > other.y
-      )
-    })
-
-    // Update position if valid
-    if (!isOverlapping) {
-      setWidgets(prev =>
-        prev.map(widget =>
-          widget.id === draggedWidget.id
-            ? { ...widget, x: newX, y: newY }
-            : widget
-        )
-      )
+    const movedWidget: I_Widget = {
+      ...original,
+      x: newPos.x,
+      y: newPos.y,
     }
 
+    const updatedWidgets = widgets.map(w =>
+      w.id === activeId ? movedWidget : w
+    )
+
+    const pushed = pushWidgets(updatedWidgets, movedWidget, activeId)
+
+    setDraggingWidgets(pushed)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (!activeId) return
+    setWidgets(draggingWidgets)
     setActiveId(null)
   }
 
-  const handleDragStart = (event: DragStartEvent) =>
-    setActiveId(event.active.id as number)
-
-  const handleDragCancel = () => setActiveId(null)
+  const handleDragCancel = () => {
+    setActiveId(null)
+    setDraggingWidgets(widgets)
+  }
 
   return (
     <DndContext
       onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
       <div
-        className="relative max-w-full mx-auto bg-white border rounded-md overflow-hidden"
         style={{
-          width: `${GRID_SIZE * MAX_COLS}px`,
-          height: `${GRID_SIZE * MAX_ROWS}px`,
+          position: 'relative',
+          width: GRID_SIZE * MAX_COLS,
+          height: GRID_SIZE * MAX_ROWS,
           backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
           backgroundImage:
             'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
         }}
       >
-        {widgets.map(widget => (
+        {draggingWidgets.map(widget => (
           <Widget
             key={widget.id}
             widget={widget}
             gridSize={GRID_SIZE}
-            isDragging={activeId === widget.id}
+            isDragging={widget.id === activeId}
+            style={{
+              visibility: widget.id === activeId ? 'hidden' : 'visible',
+            }}
           />
         ))}
 
-        <DragOverlay
-          dropAnimation={{
-            duration: 300,
-            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-          }}
-        >
-          {activeId &&
-            (() => {
-              const activeWidget = widgets.find(
-                widget => widget.id === activeId
-              )
-
-              return activeWidget ? (
-                <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
-              ) : null
-            })()}
+        <DragOverlay>
+          {activeWidget && (
+            <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
+          )}
         </DragOverlay>
       </div>
     </DndContext>

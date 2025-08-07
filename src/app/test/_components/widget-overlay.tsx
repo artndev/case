@@ -1,6 +1,6 @@
 'use client'
 
-import { useDraggable } from '@dnd-kit/core'
+import React from 'react'
 
 const sizeMap = {
   sm: { w: 3, h: 1 },
@@ -8,35 +8,36 @@ const sizeMap = {
   bg: { w: 9, h: 2 },
 }
 
-const WidgetOverlay: React.FC<{ widget: I_Widget; gridSize: number }> = ({
-  widget,
-  gridSize,
-}) => {
-  const { setNodeRef, transform } = useDraggable({
-    id: widget.id,
-    data: widget,
-  })
+interface I_Widget {
+  id: number
+  size: keyof typeof sizeMap
+  x: number
+  y: number
+}
 
+const WidgetOverlay: React.FC<{
+  widget: I_Widget
+  gridSize: number
+}> = ({ widget, gridSize }) => {
   const size = sizeMap[widget.size]
-
-  const style: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: size.w * gridSize,
-    height: size.h * gridSize,
-    transform: transform
-      ? `translate(${transform.x}px, ${transform.y}px)`
-      : undefined,
-    pointerEvents: 'none',
-    zIndex: 999,
-  }
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className="bg-blue-500 text-white font-bold p-2 rounded shadow-md select-none user-select-none cursor-grabbing"
+      style={{
+        width: size.w * gridSize,
+        height: size.h * gridSize,
+        backgroundColor: 'royalblue',
+        color: 'white',
+        fontWeight: 'bold',
+        borderRadius: 6,
+        padding: 10,
+        boxSizing: 'border-box',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+        opacity: 0.8,
+        transition: 'opacity 250ms ease-in-out',
+        pointerEvents: 'none',
+        userSelect: 'none',
+      }}
     >
       Widget {widget.id} ({widget.size})
     </div>
