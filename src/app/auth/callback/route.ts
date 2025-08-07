@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/utils/supabase/admin'
 import { createClient } from '@/utils/supabase/server'
+import { PostgrestError } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { PostgresError } from 'postgres'
 // The client you created from the Server-Side Auth instructions
 
 export async function GET(request: Request) {
@@ -28,23 +30,25 @@ export async function GET(request: Request) {
 
   // logic of "casename" field updates
   if (caseName) {
-    const { data, error: selectError } = await supabase
+    const { data, error: selectError } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('id', session.user.id)
       .maybeSingle()
 
-    console.log('SELECT ERROR: ', selectError)
+    // console.log('SELECT ERROR: ', selectError)
     if (selectError) return NextResponse.redirect(`${origin}/sign-out`)
 
     if (!data) {
-      const { error: insertError } = await supabase.from('profiles').insert({
-        id: session.user.id,
-        casename: caseName,
-        email: session.user.email,
-      })
+      const { error: insertError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: session.user.id,
+          casename: caseName,
+          email: session.user.email,
+        })
 
-      console.log('INSERT ERROR: ', insertError)
+      // console.log('INSERT ERROR: ', insertError)
       if (insertError) {
         await supabaseAdmin.auth.admin.deleteUser(session.user.id)
         return NextResponse.redirect(`${origin}/error`)

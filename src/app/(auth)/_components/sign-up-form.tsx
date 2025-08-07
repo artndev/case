@@ -19,12 +19,12 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { I_FormProps } from '../_types'
-import { signInWithOAuth } from '../actions'
 
 export function SignUpForm({
   onSubmit,
   onGoogleSubmit,
   defaultValues,
+  formTitle,
 }: I_FormProps<z.infer<typeof signUpSchema>> & {
   onGoogleSubmit: () => Promise<void>
 }) {
@@ -63,7 +63,7 @@ export function SignUpForm({
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-2">
                 <h1 className="text-xl font-semibold leading-none">
-                  Greetings!
+                  {formTitle ?? 'Greetings!'}
                 </h1>
                 <p className="text-sm text-muted-foreground text-balance">
                   Enter the credentials below to open your case

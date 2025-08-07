@@ -44,6 +44,7 @@ const SignUpStack = () => {
             <SignUpForm
               onSubmit={handleSignUp}
               onGoogleSubmit={handleGoogleSignUp}
+              formTitle={`case.me/${caseName} is yours!`}
             />
           </div>
         )}

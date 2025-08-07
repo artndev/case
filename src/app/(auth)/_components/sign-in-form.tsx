@@ -17,9 +17,9 @@ import { Eye, EyeClosed } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { I_FormProps } from '../_types'
 import { signInWithOAuth } from '../actions'
-import { z } from 'zod'
 
 export function SignInForm({
   onSubmit,
