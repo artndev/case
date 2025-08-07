@@ -1,8 +1,6 @@
 import { createAdminClient } from '@/utils/supabase/admin'
 import { createClient } from '@/utils/supabase/server'
-import { PostgrestError } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { PostgresError } from 'postgres'
 // The client you created from the Server-Side Auth instructions
 
 export async function GET(request: Request) {

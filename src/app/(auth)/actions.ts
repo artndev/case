@@ -1,12 +1,13 @@
 'use server'
 
+import { createAdminClient } from '@/utils/supabase/admin'
 import { createClient } from '@/utils/supabase/server'
 import type { Provider } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 export async function validateCaseName(caseName: string) {
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   const { data, error } = await supabase
     .from('profiles')
