@@ -10,223 +10,241 @@ import {
 import { useState, useRef } from 'react'
 import Widget from './widget'
 import WidgetOverlay from './widget-overlay'
+import { Button } from '@/components/ui/button'
 
+// Widget data model
+type WidgetSize = 'sm' | 'md' | 'bg'
 interface I_Widget {
   id: number
-  size: 'sm' | 'md' | 'bg'
+  size: WidgetSize
   x: number
   y: number
 }
 
+// Grid constants
 const GRID_SIZE = 50
 const MAX_COLS = 12
 const MAX_ROWS = 6
 
-const sizeMap = {
+// Map each widget size to its grid dimensions
+const sizeMap: Record<WidgetSize, { w: number; h: number }> = {
   sm: { w: 3, h: 1 },
   md: { w: 6, h: 2 },
   bg: { w: 9, h: 2 },
 }
 
-// Check if two widgets overlap on the grid
+/**
+ * Determine if two widgets overlap on the grid
+ */
 function isOverlapping(a: I_Widget, b: I_Widget): boolean {
-  const sizeA = sizeMap[a.size]
-  const sizeB = sizeMap[b.size]
+  const { w: aw, h: ah } = sizeMap[a.size]
+  const { w: bw, h: bh } = sizeMap[b.size]
   return !(
-    a.x + sizeA.w <= b.x ||
-    b.x + sizeB.w <= a.x ||
-    a.y + sizeA.h <= b.y ||
-    b.y + sizeB.h <= a.y
+    a.x + aw <= b.x ||
+    b.x + bw <= a.x ||
+    a.y + ah <= b.y ||
+    b.y + bh <= a.y
   )
 }
 
-function clamp(value: number, min: number, max: number) {
+/**
+ * Clamp a value within a [min, max] range
+ */
+function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(value, max))
 }
 
-function clampPosition(x: number, y: number, size: keyof typeof sizeMap) {
-  const s = sizeMap[size]
+/**
+ * Ensure widget stays fully inside grid boundaries
+ */
+function clampPosition(
+  x: number,
+  y: number,
+  size: WidgetSize
+): { x: number; y: number } {
+  const { w, h } = sizeMap[size]
   return {
-    x: clamp(x, 0, MAX_COLS - s.w),
-    y: clamp(y, 0, MAX_ROWS - s.h),
+    x: clamp(x, 0, MAX_COLS - w),
+    y: clamp(y, 0, MAX_ROWS - h),
   }
 }
 
-function pushWidgets(
+/**
+ * Find first free grid spot where widget fits without overlapping
+ */
+function findNextEmptySpot(
   widgets: I_Widget[],
-  moving: I_Widget,
-  excludeId?: number
-): I_Widget[] {
-  const newWidgets = widgets.map(w => ({ ...w }))
-  const grid = Array.from(
-    { length: MAX_ROWS },
-    () => Array(MAX_COLS).fill(null) as (number | null)[]
-  )
-
-  // Mark occupied cells
-  for (const w of newWidgets) {
-    if (w.id === moving.id) continue // Skip moving widget for now
-    const { w: width, h: height } = sizeMap[w.size]
-    for (let dy = 0; dy < height; dy++) {
-      for (let dx = 0; dx < width; dx++) {
-        const gx = w.x + dx
-        const gy = w.y + dy
-        if (gx < MAX_COLS && gy < MAX_ROWS) {
-          grid[gy][gx] = w.id
-        }
-      }
-    }
-  }
-
-  const resultWidgets = newWidgets.filter(w => w.id !== moving.id)
-  resultWidgets.push(moving)
-
-  const movedWidgets = new Set<number>()
-  const queue = [moving]
-
-  while (queue.length > 0) {
-    const current = queue.shift()!
-    const { w: width, h: height } = sizeMap[current.size]
-
-    // Check for overlaps
-    const overlapping = resultWidgets.filter(
-      w => w.id !== current.id && isOverlapping(current, w)
-    )
-
-    for (const overlap of overlapping) {
-      if (movedWidgets.has(overlap.id)) continue
-
-      // Find next empty spot
-      const spot = findNextEmptySpot(resultWidgets, overlap)
-      if (spot) {
-        overlap.x = spot.x
-        overlap.y = spot.y
-        queue.push(overlap)
-        movedWidgets.add(overlap.id)
-      }
-    }
-  }
-
-  return resultWidgets
-}
-
-function findNextEmptySpot(widgets: I_Widget[], widget: I_Widget) {
+  widget: I_Widget
+): { x: number; y: number } | null {
   const { w: width, h: height } = sizeMap[widget.size]
-
-  for (let y = 0; y <= MAX_ROWS - height; y++) {
-    for (let x = 0; x <= MAX_COLS - width; x++) {
-      const candidate = { ...widget, x, y }
-      const overlap = widgets.some(
+  for (let row = 0; row <= MAX_ROWS - height; row++) {
+    for (let col = 0; col <= MAX_COLS - width; col++) {
+      const candidate = { ...widget, x: col, y: row }
+      const conflict = widgets.some(
         w => w.id !== widget.id && isOverlapping(candidate, w)
       )
-      if (!overlap) return { x, y }
+      if (!conflict) return { x: col, y: row }
     }
   }
   return null
 }
 
+/**
+ * Recursively push widgets to avoid overlap when moving one
+ */
+function pushWidgets(widgets: I_Widget[], moving: I_Widget): I_Widget[] | null {
+  const updated = widgets.map(w => ({ ...w }))
+  const idx = updated.findIndex(w => w.id === moving.id)
+  if (idx >= 0) updated[idx] = { ...moving }
+  else updated.push({ ...moving })
+
+  const moved = new Set<number>()
+  const queue: I_Widget[] = [moving]
+
+  while (queue.length) {
+    const current = queue.shift()!
+    const collisions = updated.filter(
+      w => w.id !== current.id && isOverlapping(current, w)
+    )
+    for (const w of collisions) {
+      if (moved.has(w.id)) continue
+      const spot = findNextEmptySpot(updated, w)
+      if (!spot) return null
+      w.x = spot.x
+      w.y = spot.y
+      moved.add(w.id)
+      queue.push(w)
+    }
+  }
+  return updated
+}
+
+// Initial board state
 const initialWidgets: I_Widget[] = [
   { id: 1, size: 'sm', x: 0, y: 0 },
   { id: 2, size: 'md', x: 3, y: 0 },
   { id: 3, size: 'bg', x: 0, y: 2 },
 ]
 
-const Board = () => {
+export default function Board() {
+  // Main and dragging state
   const [widgets, setWidgets] = useState<I_Widget[]>(initialWidgets)
+  const [draggingWidgets, setDraggingWidgets] =
+    useState<I_Widget[]>(initialWidgets)
   const [activeId, setActiveId] = useState<number | null>(null)
-  const [draggingWidgets, setDraggingWidgets] = useState<I_Widget[]>(widgets)
-  const initialPos = useRef<{ x: number; y: number } | null>(null)
 
-  const activeWidget = activeId
-    ? (draggingWidgets.find(w => w.id === activeId) ?? null)
-    : null
+  // Remember starting grid coords of dragged widget
+  const startPos = useRef<{ x: number; y: number } | null>(null)
+  // New widget ID counter
+  const nextId = useRef(initialWidgets.length + 1)
 
+  const activeWidget =
+    activeId !== null
+      ? draggingWidgets.find(w => w.id === activeId) || null
+      : null
+
+  // On drag start, record initial position
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as number)
+    const id = event.active.id as number
+    setActiveId(id)
     setDraggingWidgets(widgets)
-
-    const widget = widgets.find(w => w.id === event.active.id)
-    initialPos.current = widget ? { x: widget.x, y: widget.y } : null
+    const widget = widgets.find(w => w.id === id)
+    startPos.current = widget ? { x: widget.x, y: widget.y } : null
   }
 
+  // On drag move, update position, clamp, and push overlaps
   const handleDragMove = (event: DragMoveEvent) => {
-    if (activeId === null || !initialPos.current) return
-
+    if (activeId === null || !startPos.current) return
     const original = widgets.find(w => w.id === activeId)
     if (!original) return
 
-    const deltaX = Math.round(event.delta.x / GRID_SIZE)
-    const deltaY = Math.round(event.delta.y / GRID_SIZE)
+    // Convert pixel drag to grid delta
+    const dx = Math.round(event.delta.x / GRID_SIZE)
+    const dy = Math.round(event.delta.y / GRID_SIZE)
 
-    const newPos = clampPosition(
-      initialPos.current.x + deltaX,
-      initialPos.current.y + deltaY,
+    const { x, y } = clampPosition(
+      startPos.current.x + dx,
+      startPos.current.y + dy,
       original.size
     )
 
-    const movedWidget: I_Widget = {
-      ...original,
-      x: newPos.x,
-      y: newPos.y,
-    }
+    const moved: I_Widget = { ...original, x, y }
+    const updated = widgets.map(w => (w.id === activeId ? moved : w))
 
-    const updatedWidgets = widgets.map(w =>
-      w.id === activeId ? movedWidget : w
-    )
-
-    const pushed = pushWidgets(updatedWidgets, movedWidget, activeId)
-
-    setDraggingWidgets(pushed)
+    const pushed = pushWidgets(updated, moved)
+    setDraggingWidgets(pushed ?? widgets)
   }
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    if (!activeId) return
+  // On drag end, commit positions
+  const handleDragEnd = (_: DragEndEvent) => {
+    if (activeId === null) return
     setWidgets(draggingWidgets)
     setActiveId(null)
   }
 
+  // On cancel, reset drag state
   const handleDragCancel = () => {
     setActiveId(null)
     setDraggingWidgets(widgets)
   }
 
-  return (
-    <DndContext
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div
-        style={{
-          position: 'relative',
-          width: GRID_SIZE * MAX_COLS,
-          height: GRID_SIZE * MAX_ROWS,
-          backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-          backgroundImage:
-            'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
-        }}
-      >
-        {draggingWidgets.map(widget => (
-          <Widget
-            key={widget.id}
-            widget={widget}
-            gridSize={GRID_SIZE}
-            isDragging={widget.id === activeId}
-            style={{
-              visibility: widget.id === activeId ? 'hidden' : 'visible',
-            }}
-          />
-        ))}
+  // Add new widget of given size at first free spot
+  const addWidget = (size: 'sm' | 'md' | 'bg') => {
+    const newW: I_Widget = { id: nextId.current++, size, x: 0, y: 0 }
+    const spot = findNextEmptySpot(widgets, newW)
+    if (!spot) {
+      alert('No space available')
+      return
+    }
+    newW.x = spot.x
+    newW.y = spot.y
+    setWidgets(prev => [...prev, newW])
+    setDraggingWidgets(prev => [...prev, newW])
+  }
 
-        <DragOverlay>
-          {activeWidget && (
-            <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
-          )}
-        </DragOverlay>
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Add widget controls */}
+      <div className="flex gap-3">
+        <Button onClick={() => addWidget('sm')}>Add Small</Button>
+        <Button onClick={() => addWidget('md')}>Add Medium</Button>
+        <Button onClick={() => addWidget('bg')}>Add Large</Button>
       </div>
-    </DndContext>
+
+      {/* Grid container */}
+      <DndContext
+        onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div
+          className="relative border rounded-md bg-white"
+          style={{
+            width: GRID_SIZE * MAX_COLS,
+            height: GRID_SIZE * MAX_ROWS,
+            backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+            backgroundImage:
+              'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
+          }}
+        >
+          {draggingWidgets.map(w => (
+            <Widget
+              key={w.id}
+              widget={w}
+              gridSize={GRID_SIZE}
+              isDragging={w.id === activeId}
+              style={{ visibility: w.id === activeId ? 'hidden' : 'visible' }}
+            />
+          ))}
+
+          <DragOverlay>
+            {activeWidget && (
+              <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
+            )}
+          </DragOverlay>
+        </div>
+      </DndContext>
+    </div>
   )
 }
-
-export default Board

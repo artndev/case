@@ -16,12 +16,23 @@ interface I_Widget {
   y: number
 }
 
-const Widget: React.FC<{
+interface WidgetProps {
   widget: I_Widget
   gridSize: number
   style?: React.CSSProperties
   isDragging: boolean
-}> = ({ widget, gridSize, style = {}, isDragging }) => {
+}
+
+/**
+ * Widget component is draggable and positioned absolutely within the grid container.
+ * It changes cursor and transition styles based on dragging state.
+ */
+const Widget: React.FC<WidgetProps> = ({
+  widget,
+  gridSize,
+  style = {},
+  isDragging,
+}) => {
   const size = sizeMap[widget.size]
 
   const { attributes, listeners, setNodeRef } = useDraggable({
@@ -33,28 +44,25 @@ const Widget: React.FC<{
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      data-id={widget.id}
+      draggable={false}
       style={{
-        position: 'absolute',
         left: widget.x * gridSize,
         top: widget.y * gridSize,
         width: size.w * gridSize,
         height: size.h * gridSize,
-        backgroundColor: 'royalblue',
-        color: 'white',
-        fontWeight: 'bold',
-        borderRadius: 6,
-        padding: 10,
-        boxSizing: 'border-box',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        userSelect: 'none',
-        touchAction: 'none',
         cursor: isDragging ? 'grabbing' : 'grab',
         transition: isDragging ? 'none' : 'left 250ms ease, top 250ms ease',
         willChange: 'left, top',
+        position: 'absolute',
         ...style,
       }}
-      data-id={widget.id}
-      draggable={false}
+      className={`
+        bg-blue-600 text-white font-bold rounded-md 
+        p-2 shadow-md select-none touch-none
+        ${isDragging ? 'opacity-90' : 'opacity-100'}
+        box-border
+      `}
     >
       Widget {widget.id} ({widget.size})
     </div>

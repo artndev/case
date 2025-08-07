@@ -15,6 +15,9 @@ interface I_Widget {
   y: number
 }
 
+/**
+ * WidgetOverlay is used to render the dragging widget overlay with partial opacity.
+ */
 const WidgetOverlay: React.FC<{
   widget: I_Widget
   gridSize: number
@@ -26,18 +29,13 @@ const WidgetOverlay: React.FC<{
       style={{
         width: size.w * gridSize,
         height: size.h * gridSize,
-        backgroundColor: 'royalblue',
-        color: 'white',
-        fontWeight: 'bold',
-        borderRadius: 6,
-        padding: 10,
-        boxSizing: 'border-box',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-        opacity: 0.8,
-        transition: 'opacity 250ms ease-in-out',
-        pointerEvents: 'none',
-        userSelect: 'none',
       }}
+      className="
+        bg-blue-600 text-white font-bold rounded-md 
+        p-2 shadow-lg opacity-80 pointer-events-none select-none
+        transition-opacity duration-250 ease-in-out
+        box-border
+      "
     >
       Widget {widget.id} ({widget.size})
     </div>
