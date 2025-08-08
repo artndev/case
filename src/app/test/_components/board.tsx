@@ -1,25 +1,17 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
 import {
   DndContext,
-  DragStartEvent,
-  DragMoveEvent,
   DragEndEvent,
+  DragMoveEvent,
   DragOverlay,
+  DragStartEvent,
 } from '@dnd-kit/core'
-import { useState, useRef } from 'react'
+import { useRef, useState } from 'react'
+import { I_Widget, WidgetSize } from '../_types'
 import Widget from './widget'
 import WidgetOverlay from './widget-overlay'
-import { Button } from '@/components/ui/button'
-
-// Widget data model
-type WidgetSize = 'sm' | 'md' | 'bg'
-interface I_Widget {
-  id: number
-  size: WidgetSize
-  x: number
-  y: number
-}
 
 // Grid constants
 const GRID_SIZE = 50
@@ -36,33 +28,30 @@ const sizeMap: Record<WidgetSize, { w: number; h: number }> = {
 /**
  * Determine if two widgets overlap on the grid
  */
-function isOverlapping(a: I_Widget, b: I_Widget): boolean {
+const isOverlapping = (a: I_Widget, b: I_Widget): boolean => {
   const { w: aw, h: ah } = sizeMap[a.size]
   const { w: bw, h: bh } = sizeMap[b.size]
-  return !(
-    a.x + aw <= b.x ||
-    b.x + bw <= a.x ||
-    a.y + ah <= b.y ||
-    b.y + bh <= a.y
-  )
+
+  return a.x + aw > b.x && b.x + bw > a.x && a.y + ah > b.y && b.y + bh > a.y
 }
 
 /**
  * Clamp a value within a [min, max] range
  */
-function clamp(value: number, min: number, max: number): number {
+const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(value, max))
 }
 
 /**
  * Ensure widget stays fully inside grid boundaries
  */
-function clampPosition(
+const clampPosition = (
   x: number,
   y: number,
   size: WidgetSize
-): { x: number; y: number } {
+): { x: number; y: number } => {
   const { w, h } = sizeMap[size]
+
   return {
     x: clamp(x, 0, MAX_COLS - w),
     y: clamp(y, 0, MAX_ROWS - h),
@@ -72,62 +61,65 @@ function clampPosition(
 /**
  * Find first free grid spot where widget fits without overlapping
  */
-function findNextEmptySpot(
+const findEmptySpot = (
   widgets: I_Widget[],
   widget: I_Widget
-): { x: number; y: number } | null {
-  const { w: width, h: height } = sizeMap[widget.size]
-  for (let row = 0; row <= MAX_ROWS - height; row++) {
-    for (let col = 0; col <= MAX_COLS - width; col++) {
+): { x: number; y: number } | null => {
+  const { w, h } = sizeMap[widget.size]
+
+  for (let row = 0; row <= MAX_ROWS - h; row++) {
+    for (let col = 0; col <= MAX_COLS - w; col++) {
       const candidate = { ...widget, x: col, y: row }
-      const conflict = widgets.some(
-        w => w.id !== widget.id && isOverlapping(candidate, w)
+      const isOverlapped = widgets.some(
+        wgt => wgt.id !== widget.id && isOverlapping(candidate, wgt)
       )
-      if (!conflict) return { x: col, y: row }
+
+      if (!isOverlapped) return { x: col, y: row }
     }
   }
+
   return null
 }
 
 /**
- * Recursively push widgets to avoid overlap when moving one
+ * Recursively update widgets to avoid overlap when moving one \
+ * _Run BFS from start until all widgets are placed without any collisions_
  */
-function pushWidgets(widgets: I_Widget[], moving: I_Widget): I_Widget[] | null {
-  const updated = widgets.map(w => ({ ...w }))
-  const idx = updated.findIndex(w => w.id === moving.id)
-  if (idx >= 0) updated[idx] = { ...moving }
-  else updated.push({ ...moving })
-
-  const moved = new Set<number>()
-  const queue: I_Widget[] = [moving]
+const pushWidgets = (
+  widgets: I_Widget[],
+  start: I_Widget
+): I_Widget[] | null => {
+  const updated = [...widgets]
+  const queue = [start]
 
   while (queue.length) {
     const current = queue.shift()!
     const collisions = updated.filter(
-      w => w.id !== current.id && isOverlapping(current, w)
+      wgt => wgt.id !== current.id && isOverlapping(current, wgt)
     )
-    for (const w of collisions) {
-      if (moved.has(w.id)) continue
-      const spot = findNextEmptySpot(updated, w)
+
+    for (const wgt of collisions) {
+      const spot = findEmptySpot(updated, wgt)
       if (!spot) return null
-      w.x = spot.x
-      w.y = spot.y
-      moved.add(w.id)
-      queue.push(w)
+
+      wgt.x = spot.x
+      wgt.y = spot.y
+
+      queue.push({ ...wgt })
     }
   }
+
   return updated
 }
 
 // Initial board state
 const initialWidgets: I_Widget[] = [
-  { id: 1, size: 'sm', x: 0, y: 0 },
-  { id: 2, size: 'md', x: 3, y: 0 },
-  { id: 3, size: 'bg', x: 0, y: 2 },
+  { id: 1, size: 'sm', x: 0, y: 4 },
+  { id: 2, size: 'md', x: 0, y: 2 },
+  { id: 3, size: 'bg', x: 0, y: 0 },
 ]
 
-export default function Board() {
-  // Main and dragging state
+const Board = () => {
   const [widgets, setWidgets] = useState<I_Widget[]>(initialWidgets)
   const [draggingWidgets, setDraggingWidgets] =
     useState<I_Widget[]>(initialWidgets)
@@ -135,27 +127,28 @@ export default function Board() {
 
   // Remember starting grid coords of dragged widget
   const startPos = useRef<{ x: number; y: number } | null>(null)
-  // New widget ID counter
-  const nextId = useRef(initialWidgets.length + 1)
+
+  const currentId = useRef(initialWidgets.length + 1)
 
   const activeWidget =
     activeId !== null
-      ? draggingWidgets.find(w => w.id === activeId) || null
+      ? (draggingWidgets.find(wgt => wgt.id === activeId) ?? null)
       : null
 
-  // On drag start, record initial position
   const handleDragStart = (event: DragStartEvent) => {
     const id = event.active.id as number
     setActiveId(id)
+
     setDraggingWidgets(widgets)
-    const widget = widgets.find(w => w.id === id)
+
+    const widget = widgets.find(wgt => wgt.id === id)
     startPos.current = widget ? { x: widget.x, y: widget.y } : null
   }
 
-  // On drag move, update position, clamp, and push overlaps
   const handleDragMove = (event: DragMoveEvent) => {
     if (activeId === null || !startPos.current) return
-    const original = widgets.find(w => w.id === activeId)
+
+    const original = widgets.find(wgt => wgt.id === activeId)
     if (!original) return
 
     // Convert pixel drag to grid delta
@@ -168,50 +161,48 @@ export default function Board() {
       original.size
     )
 
-    const moved: I_Widget = { ...original, x, y }
-    const updated = widgets.map(w => (w.id === activeId ? moved : w))
-
-    const pushed = pushWidgets(updated, moved)
+    const start: I_Widget = { ...original, x, y }
+    const updated = widgets.map(wgt => (wgt.id === activeId ? start : wgt))
+    const pushed = pushWidgets(updated, start)
     setDraggingWidgets(pushed ?? widgets)
   }
 
-  // On drag end, commit positions
   const handleDragEnd = (_: DragEndEvent) => {
     if (activeId === null) return
-    setWidgets(draggingWidgets)
+
+    setWidgets(draggingWidgets) // Commit positions
     setActiveId(null)
   }
 
-  // On cancel, reset drag state
   const handleDragCancel = () => {
-    setActiveId(null)
     setDraggingWidgets(widgets)
+    setActiveId(null)
   }
 
-  // Add new widget of given size at first free spot
-  const addWidget = (size: 'sm' | 'md' | 'bg') => {
-    const newW: I_Widget = { id: nextId.current++, size, x: 0, y: 0 }
-    const spot = findNextEmptySpot(widgets, newW)
+  const addWidget = (size: I_Widget['size']) => {
+    const widget: I_Widget = { id: currentId.current++, size, x: 0, y: 0 }
+    const spot = findEmptySpot(widgets, widget)
+
     if (!spot) {
       alert('No space available')
       return
     }
-    newW.x = spot.x
-    newW.y = spot.y
-    setWidgets(prev => [...prev, newW])
-    setDraggingWidgets(prev => [...prev, newW])
+
+    widget.x = spot.x
+    widget.y = spot.y
+
+    setWidgets(prev => [...prev, widget])
+    setDraggingWidgets(prev => [...prev, widget])
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Add widget controls */}
       <div className="flex gap-3">
         <Button onClick={() => addWidget('sm')}>Add Small</Button>
         <Button onClick={() => addWidget('md')}>Add Medium</Button>
         <Button onClick={() => addWidget('bg')}>Add Large</Button>
       </div>
 
-      {/* Grid container */}
       <DndContext
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
@@ -248,3 +239,5 @@ export default function Board() {
     </div>
   )
 }
+
+export default Board
