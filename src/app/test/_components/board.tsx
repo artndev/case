@@ -13,13 +13,12 @@ import { I_Widget, WidgetSize } from '../_types'
 import Widget from './widget'
 import WidgetOverlay from './widget-overlay'
 
-// Grid constants
 const GRID_SIZE = 50
 const MAX_COLS = 12
 const MAX_ROWS = 6
 
 // Map each widget size to its grid dimensions
-const sizeMap: Record<WidgetSize, { w: number; h: number }> = {
+export const sizeMap: Record<WidgetSize, { w: number; h: number }> = {
   sm: { w: 3, h: 1 },
   md: { w: 6, h: 2 },
   bg: { w: 9, h: 2 },
@@ -89,8 +88,8 @@ const pushWidgets = (
   widgets: I_Widget[],
   start: I_Widget
 ): I_Widget[] | null => {
-  const updated = [...widgets]
-  const queue = [start]
+  const updated = widgets.map(wgt => ({ ...wgt }))
+  const queue: I_Widget[] = [{ ...start }]
 
   while (queue.length) {
     const current = queue.shift()!
@@ -112,7 +111,6 @@ const pushWidgets = (
   return updated
 }
 
-// Initial board state
 const initialWidgets: I_Widget[] = [
   { id: 1, size: 'sm', x: 0, y: 4 },
   { id: 2, size: 'md', x: 0, y: 2 },
@@ -130,10 +128,9 @@ const Board = () => {
 
   const currentId = useRef(initialWidgets.length + 1)
 
-  const activeWidget =
-    activeId !== null
-      ? (draggingWidgets.find(wgt => wgt.id === activeId) ?? null)
-      : null
+  const activeWidget = activeId
+    ? (draggingWidgets.find(wgt => wgt.id === activeId) ?? null)
+    : null
 
   const handleDragStart = (event: DragStartEvent) => {
     const id = event.active.id as number
@@ -170,7 +167,9 @@ const Board = () => {
   const handleDragEnd = (_: DragEndEvent) => {
     if (activeId === null) return
 
-    setWidgets(draggingWidgets) // Commit positions
+    // Commit positions
+    setWidgets(draggingWidgets)
+
     setActiveId(null)
   }
 
@@ -210,7 +209,7 @@ const Board = () => {
         onDragCancel={handleDragCancel}
       >
         <div
-          className="relative border rounded-md bg-white"
+          className="relative border rounded-sm bg-white"
           style={{
             width: GRID_SIZE * MAX_COLS,
             height: GRID_SIZE * MAX_ROWS,
@@ -219,13 +218,13 @@ const Board = () => {
               'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
           }}
         >
-          {draggingWidgets.map(w => (
+          {draggingWidgets.map(wgt => (
             <Widget
-              key={w.id}
-              widget={w}
+              key={wgt.id}
+              widget={wgt}
               gridSize={GRID_SIZE}
-              isDragging={w.id === activeId}
-              style={{ visibility: w.id === activeId ? 'hidden' : 'visible' }}
+              isDragging={wgt.id === activeId}
+              style={{ visibility: wgt.id === activeId ? 'hidden' : 'visible' }}
             />
           ))}
 
