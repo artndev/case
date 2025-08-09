@@ -1,34 +1,49 @@
 'use server'
 
-import { createAdminClient } from '@/utils/supabase/admin'
+import axios from '@/lib/axios'
 import { createClient } from '@/utils/supabase/server'
 import type { Provider } from '@supabase/supabase-js'
+import jwt from 'jsonwebtoken'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { v4 as uuidv4 } from 'uuid'
+import { I_AxiosResponse, I_StatePayload } from '../types'
 
-export async function validateCaseName(caseName: string) {
-  const supabase = await createAdminClient()
+export const validateCaseName = async (
+  caseName: string
+): Promise<boolean | null> => {
+  return axios
+    .get<I_AxiosResponse<boolean>>('/api/casenames', {
+      headers: {
+        'X-API-KEY': process.env.X_API_KEY!,
+      },
+      params: {
+        value: caseName,
+      },
+    })
+    .then(({ data }) => data.answer)
+    .catch(err => {
+      console.log(err)
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('casename', caseName)
-    .maybeSingle()
-
-  if (error) return null
-
-  return data
+      return null
+    })
 }
 
-export async function signIn(formData: FormData) {
+const createState = (statePayload: I_StatePayload): string => {
+  return jwt.sign(statePayload, process.env.STATE_SECRET!, {
+    algorithm: 'HS256',
+    jwtid: uuidv4(),
+    expiresIn: '5m',
+  })
+}
+
+export const signIn = async (formData: FormData): Promise<void> => {
   const supabase = await createClient()
 
-  const data = {
+  const { error } = await supabase.auth.signInWithPassword({
     email: formData.get('email') as string,
     password: formData.get('password') as string,
-  }
-
-  const { error } = await supabase.auth.signInWithPassword(data)
+  })
 
   if (error) redirect('/error')
 
@@ -36,7 +51,7 @@ export async function signIn(formData: FormData) {
   redirect('/')
 }
 
-export async function signUp(formData: FormData) {
+export const signUp = async (formData: FormData): Promise<void> => {
   const supabase = await createClient()
 
   const data = {
@@ -61,15 +76,18 @@ export async function signUp(formData: FormData) {
 
   if (insertError) redirect('/error')
 
-  // no need to use revalidatePath here as user is redirected to status page
   redirect('/auth/success')
 }
 
 export async function signInWithOAuth(provider: Provider, caseName?: string) {
   const supabase = await createClient()
 
+  const state = caseName
+    ? createState({ casename: caseName, type: 'sign-up' })
+    : createState({ type: 'sign-in' })
+
   const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`)
-  if (caseName) url.searchParams.append('casename', caseName)
+  url.searchParams.append('state', state)
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
@@ -88,9 +106,9 @@ export async function signInWithOAuth(provider: Provider, caseName?: string) {
 export async function resetPassword(formData: FormData) {
   const supabase = await createClient()
 
-  const email = formData.get('email') as string
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email)
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    formData.get('email') as string
+  )
 
   if (error) redirect('/error')
 
@@ -100,9 +118,9 @@ export async function resetPassword(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   const supabase = await createClient()
 
-  const password = formData.get('password') as string
-
-  const { error } = await supabase.auth.updateUser({ password: password })
+  const { error } = await supabase.auth.updateUser({
+    password: formData.get('password') as string,
+  })
 
   if (error) redirect('/error')
 

@@ -1,19 +1,28 @@
+import { checkUser, verifyState } from '@/app/actions'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
-// The client you created from the Server-Side Auth instructions
 
+// The client you created from the Server-Side Auth instructions
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
 
-  // if "next" is in param, use it as the redirect URL
+  // If "next" is in param, use it as the redirect URL
   let next = searchParams.get('next') ?? '/'
 
-  // if "next" is not a relative URL, use the default
+  // If "next" is not a relative URL, use the default
   if (!next.startsWith('/')) next = '/'
 
+  const code = searchParams.get('code')
   if (!code) return NextResponse.redirect(`${origin}/error`)
+
+  const state = searchParams.get('state')
+  // console.log('STATE: ', state)
+  if (!state) return NextResponse.redirect(`${origin}/error`)
+
+  const statePayload = verifyState(state)
+  // console.log('STATE_PAYLOAD: ', statePayload)
+  if (!statePayload) return NextResponse.redirect(`${origin}/error`)
 
   const supabase = await createClient()
   const {
@@ -23,43 +32,46 @@ export async function GET(request: Request) {
 
   if (sessionError || !session) return NextResponse.redirect(`${origin}/error`)
 
+  // Check for user in profiles table
+  const user = await checkUser(session.user.id)
+
+  // Wait for any errors
+  if (user === null) return NextResponse.redirect(`${origin}/error`)
+
   const supabaseAdmin = await createAdminClient()
-  const caseName = searchParams.get('casename')
 
-  // logic of "casename" field updates
-  if (caseName) {
-    const { data, error: selectError } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', session.user.id)
-      .maybeSingle()
+  // Handle sign in to non-existing profile
+  if (statePayload.type === 'sign-in' && user === false) {
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
+      session.user.id
+    )
 
-    // console.log('SELECT ERROR: ', selectError)
-    if (selectError) return NextResponse.redirect(`${origin}/sign-out`)
+    if (deleteError) return NextResponse.redirect(`${origin}/error`)
 
-    if (!data) {
-      const { error: insertError } = await supabaseAdmin
-        .from('profiles')
-        .insert({
-          id: session.user.id,
-          casename: caseName,
-          email: session.user.email,
-        })
-
-      // console.log('INSERT ERROR: ', insertError)
-      if (insertError) {
-        await supabaseAdmin.auth.admin.deleteUser(session.user.id)
-        return NextResponse.redirect(`${origin}/error`)
-      }
-    }
+    return NextResponse.redirect(`${origin}/sign-up`)
   }
 
-  const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
+  if (statePayload.type === 'sign-up' && user === false) {
+    const { error: insertError } = await supabase.from('profiles').insert({
+      id: session.user.id,
+      email: session.user.email,
+      casename: statePayload.casename,
+    })
+
+    if (insertError) return NextResponse.redirect(`${origin}/sign-out`)
+  }
+
+  // Original origin before load balancer
+  const forwardedHost = request.headers.get('X-Forwarded-Host')
+
   const isLocalEnv = process.env.NODE_ENV === 'development'
 
-  // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
+  /* We can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host */
+
   if (isLocalEnv) return NextResponse.redirect(`${origin}${next}`)
-  else if (forwardedHost)
+
+  if (forwardedHost)
     return NextResponse.redirect(`https://${forwardedHost}${next}`)
-  else return NextResponse.redirect(`${origin}${next}`)
+
+  return NextResponse.redirect(`${origin}${next}`)
 }

@@ -1,16 +1,25 @@
-'use server'
+import jwt from 'jsonwebtoken'
+import { I_StatePayload } from './types'
+import { createAdminClient } from '@/utils/supabase/admin'
 
-import { createClient } from '@/utils/supabase/server'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+export const verifyState = (state: string): I_StatePayload | null => {
+  try {
+    return jwt.verify(state, process.env.STATE_SECRET!) as I_StatePayload
+  } catch (err) {
+    return null
+  }
+}
 
-export async function signOut() {
-  const supabase = await createClient()
+export const checkUser = async (id: string): Promise<boolean | null> => {
+  const supabase = createAdminClient()
 
-  const { error } = await supabase.auth.signOut()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', id)
+    .maybeSingle()
 
-  if (error) redirect('/error')
+  if (error) return null
 
-  revalidatePath('/', 'layout')
-  redirect('/')
+  return data ? true : false
 }
