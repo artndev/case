@@ -64,8 +64,6 @@ export const signUp = async (formData: FormData): Promise<void> => {
     },
   })
 
-  console.log(error)
-
   if (error) redirect('/error')
 
   redirect('/auth/success')
