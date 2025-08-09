@@ -41,11 +41,13 @@ export const GET = async (request: Request) => {
   }
 
   const supabaseAdmin = await createAdminClient()
+
   const { data, error: selectError } = await supabaseAdmin
     .from('profiles')
     .select('casename')
     .eq('casename', value)
     .maybeSingle()
+
   if (selectError) {
     return NextResponse.json(
       { message: 'Server is not responding', answer: null },

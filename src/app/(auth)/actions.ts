@@ -54,32 +54,27 @@ export const signIn = async (formData: FormData): Promise<void> => {
 export const signUp = async (formData: FormData): Promise<void> => {
   const supabase = await createClient()
 
-  const data = {
+  const { error } = await supabase.auth.signUp({
     email: formData.get('email') as string,
     password: formData.get('password') as string,
-    casename: formData.get('casename') as string,
-  }
-
-  const { casename, ...signUpPayload } = data
-  const {
-    data: { user },
-    error: signUpError,
-  } = await supabase.auth.signUp(signUpPayload)
-
-  if (signUpError || !user) redirect('/error')
-
-  const { password, ...insertPayload } = data
-  const { error: insertError } = await supabase.from('profiles').insert({
-    id: user.id,
-    ...insertPayload,
+    options: {
+      data: {
+        casename: formData.get('casename') as string,
+      },
+    },
   })
 
-  if (insertError) redirect('/error')
+  console.log(error)
+
+  if (error) redirect('/error')
 
   redirect('/auth/success')
 }
 
-export async function signInWithOAuth(provider: Provider, caseName?: string) {
+export const signInWithOAuth = async (
+  provider: Provider,
+  caseName?: string
+): Promise<void> => {
   const supabase = await createClient()
 
   const state = caseName
@@ -103,7 +98,7 @@ export async function signInWithOAuth(provider: Provider, caseName?: string) {
   redirect(data.url)
 }
 
-export async function resetPassword(formData: FormData) {
+export const resetPassword = async (formData: FormData) => {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.resetPasswordForEmail(
@@ -115,7 +110,7 @@ export async function resetPassword(formData: FormData) {
   redirect('/auth/success')
 }
 
-export async function updatePassword(formData: FormData) {
+export const updatePassword = async (formData: FormData) => {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.updateUser({
