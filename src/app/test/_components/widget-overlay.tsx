@@ -22,7 +22,7 @@ const WidgetOverlay: React.FC<I_WidgetOverlayProps> = ({
         opacity-80 transition-opacity duration-250 ease-in-out
       "
     >
-      Widget {widget.id} ({widget.size})
+      ⠿
     </div>
   )
 }

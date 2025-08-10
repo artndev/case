@@ -9,19 +9,19 @@ import {
   DragStartEvent,
 } from '@dnd-kit/core'
 import { useRef, useState } from 'react'
-import { I_Widget, WidgetSize } from '../_types'
+import { I_Widget, T_WidgetSize } from '../_types'
 import Widget from './widget'
 import WidgetOverlay from './widget-overlay'
 
-const GRID_SIZE = 50
-const MAX_COLS = 12
-const MAX_ROWS = 6
+const GRID_SIZE = 25
+const MAX_COLS = 50
+const MAX_ROWS = 25
 
 // Map each widget size to its grid dimensions
-export const sizeMap: Record<WidgetSize, { w: number; h: number }> = {
-  sm: { w: 3, h: 1 },
-  md: { w: 6, h: 2 },
-  bg: { w: 9, h: 2 },
+export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
+  sm: { w: 8, h: 8 },
+  md: { w: 8, h: 10 },
+  bg: { w: 8, h: 12 },
 }
 
 /**
@@ -47,7 +47,7 @@ const clamp = (value: number, min: number, max: number): number => {
 const clampPosition = (
   x: number,
   y: number,
-  size: WidgetSize
+  size: T_WidgetSize
 ): { x: number; y: number } => {
   const { w, h } = sizeMap[size]
 
@@ -126,18 +126,24 @@ const Board = () => {
   // Remember starting grid coords of dragged widget
   const startPos = useRef<{ x: number; y: number } | null>(null)
 
+  // addWidget's current id
   const currentId = useRef(initialWidgets.length + 1)
 
   const activeWidget = activeId
     ? (draggingWidgets.find(wgt => wgt.id === activeId) ?? null)
     : null
 
+  /* DRAG CONTEXT EVENTS */
+
   const handleDragStart = (event: DragStartEvent) => {
+    // Set active widget
     const id = event.active.id as number
     setActiveId(id)
 
+    // Load saved layout
     setDraggingWidgets(widgets)
 
+    // Initiate startPos depending on active widget
     const widget = widgets.find(wgt => wgt.id === id)
     startPos.current = widget ? { x: widget.x, y: widget.y } : null
   }
@@ -152,6 +158,7 @@ const Board = () => {
     const dx = Math.round(event.delta.x / GRID_SIZE)
     const dy = Math.round(event.delta.y / GRID_SIZE)
 
+    // Prevent widget from going outta grid borders
     const { x, y } = clampPosition(
       startPos.current.x + dx,
       startPos.current.y + dy,
@@ -161,22 +168,24 @@ const Board = () => {
     const start: I_Widget = { ...original, x, y }
     const updated = widgets.map(wgt => (wgt.id === activeId ? start : wgt))
     const pushed = pushWidgets(updated, start)
+
+    // Update dragging layout
     setDraggingWidgets(pushed ?? widgets)
   }
 
   const handleDragEnd = (_: DragEndEvent) => {
     if (activeId === null) return
 
-    // Commit positions
-    setWidgets(draggingWidgets)
-
+    setWidgets(draggingWidgets) // Update saved layout
     setActiveId(null)
   }
 
   const handleDragCancel = () => {
-    setDraggingWidgets(widgets)
+    setDraggingWidgets(widgets) // Return to recent saved layout
     setActiveId(null)
   }
+
+  /* WIDGET MANIPULATIONS */
 
   const addWidget = (size: I_Widget['size']) => {
     const widget: I_Widget = { id: currentId.current++, size, x: 0, y: 0 }
@@ -190,8 +199,46 @@ const Board = () => {
     widget.x = spot.x
     widget.y = spot.y
 
+    /* Update both layouts to avoid conflicts */
+
     setWidgets(prev => [...prev, widget])
     setDraggingWidgets(prev => [...prev, widget])
+  }
+
+  const resizeWidget = (id: number, size: T_WidgetSize) => {
+    /* Update both layouts to avoid conflicts */
+
+    setWidgets(prev => {
+      const original = prev.find(wgt => wgt.id === id)
+      if (!original) return prev
+
+      // Prevent widget from going outta grid borders
+      const { x, y } = clampPosition(original.x, original.y, size)
+
+      const start: I_Widget = { ...original, size, x, y }
+      const updated = prev.map(wgt => (wgt.id === id ? start : wgt))
+      const pushed = pushWidgets(updated, start)
+
+      // if (!pushed) alert('No space available')
+
+      return pushed ?? prev
+    })
+
+    setDraggingWidgets(prev => {
+      const original = prev.find(wgt => wgt.id === id)
+      if (!original) return prev
+
+      // Prevent widget from going outta grid borders
+      const { x, y } = clampPosition(original.x, original.y, size)
+
+      const start: I_Widget = { ...original, size, x, y }
+      const updated = prev.map(wgt => (wgt.id === id ? start : wgt))
+      const pushed = pushWidgets(updated, start)
+
+      // if (!pushed) alert('No space available')
+
+      return pushed ?? prev
+    })
   }
 
   return (
@@ -225,7 +272,21 @@ const Board = () => {
               gridSize={GRID_SIZE}
               isDragging={wgt.id === activeId}
               style={{ visibility: wgt.id === activeId ? 'hidden' : 'visible' }}
-            />
+            >
+              <div className="flex flex-wrap gap-3">
+                {(Object.keys(sizeMap) as T_WidgetSize[]).map(key => {
+                  return (
+                    <Button
+                      variant={'ghost'}
+                      size={'icon'}
+                      onClick={() => resizeWidget(wgt.id, key)}
+                    >
+                      {key.toUpperCase()}
+                    </Button>
+                  )
+                })}
+              </div>
+            </Widget>
           ))}
 
           <DragOverlay>
