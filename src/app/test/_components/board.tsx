@@ -9,13 +9,20 @@ import {
   DragStartEvent,
 } from '@dnd-kit/core'
 import { useRef, useState } from 'react'
-import { I_Widget, T_WidgetSize } from '../_types'
-import Widget from './widget'
+import {
+  I_Widget,
+  I_WidgetProps,
+  I_WidgetType,
+  T_ComponentType,
+  T_WidgetSize,
+} from '../_types'
 import WidgetOverlay from './widget-overlay'
+import Widget1 from './widgets/widget-1'
+import Widget2 from './widgets/widget-2'
 
 const GRID_SIZE = 25
 const MAX_COLS = 50
-const MAX_ROWS = 25
+const MAX_ROWS = 20
 
 // Map each widget size to its grid dimensions
 export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
@@ -23,6 +30,60 @@ export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
   md: { w: 8, h: 10 },
   bg: { w: 8, h: 12 },
 }
+
+// Map each widget to its component
+export const componentTypeMap: Record<
+  T_ComponentType,
+  {
+    displayName: string
+    component: React.FC<I_WidgetProps>
+  }
+> = {
+  'widget-1': {
+    displayName: 'Widget #1',
+    component: Widget1,
+  },
+  'widget-2': {
+    displayName: 'Widget #2',
+    component: Widget2,
+  },
+}
+
+export const initialWidgetTypes: I_WidgetType[] = [
+  {
+    id: 1,
+    componentType: 'widget-1',
+  },
+  {
+    id: 2,
+    componentType: 'widget-2',
+  },
+  {
+    id: 3,
+    componentType: 'widget-2',
+  },
+]
+
+const initialWidgets: I_Widget[] = [
+  {
+    id: 1,
+    size: 'sm',
+    x: 0,
+    y: 0,
+  },
+  {
+    id: 2,
+    size: 'sm',
+    x: 8,
+    y: 0,
+  },
+  {
+    id: 3,
+    size: 'sm',
+    x: 16,
+    y: 0,
+  },
+]
 
 /**
  * Determine if two widgets overlap on the grid
@@ -111,16 +172,12 @@ const pushWidgets = (
   return updated
 }
 
-const initialWidgets: I_Widget[] = [
-  { id: 1, size: 'sm', x: 0, y: 4 },
-  { id: 2, size: 'md', x: 0, y: 2 },
-  { id: 3, size: 'bg', x: 0, y: 0 },
-]
-
 const Board = () => {
   const [widgets, setWidgets] = useState<I_Widget[]>(initialWidgets)
   const [draggingWidgets, setDraggingWidgets] =
     useState<I_Widget[]>(initialWidgets)
+  const [widgetTypes, setWidgetTypes] =
+    useState<I_WidgetType[]>(initialWidgetTypes)
   const [activeId, setActiveId] = useState<number | null>(null)
 
   // Remember starting grid coords of dragged widget
@@ -187,8 +244,13 @@ const Board = () => {
 
   /* WIDGET MANIPULATIONS */
 
-  const addWidget = (size: I_Widget['size']) => {
-    const widget: I_Widget = { id: currentId.current++, size, x: 0, y: 0 }
+  const addWidget = (size: T_WidgetSize, componentType: T_ComponentType) => {
+    const widget: I_Widget = {
+      id: currentId.current++,
+      size,
+      x: 0,
+      y: 0,
+    }
     const spot = findEmptySpot(widgets, widget)
 
     if (!spot) {
@@ -201,6 +263,13 @@ const Board = () => {
 
     /* Update both layouts to avoid conflicts */
 
+    setWidgetTypes(prev => [
+      ...prev,
+      {
+        id: widget.id,
+        componentType,
+      },
+    ])
     setWidgets(prev => [...prev, widget])
     setDraggingWidgets(prev => [...prev, widget])
   }
@@ -243,11 +312,18 @@ const Board = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex gap-3">
-        <Button onClick={() => addWidget('sm')}>Add Small</Button>
-        <Button onClick={() => addWidget('md')}>Add Medium</Button>
-        <Button onClick={() => addWidget('bg')}>Add Large</Button>
-      </div>
+      {(Object.keys(componentTypeMap) as T_ComponentType[]).map(key => {
+        return (
+          <div className="flex flex-col gap-3">
+            {componentTypeMap[key].displayName}
+            <div className="flex gap-3">
+              <Button onClick={() => addWidget('sm', key)}>Add Small</Button>
+              <Button onClick={() => addWidget('md', key)}>Add Medium</Button>
+              <Button onClick={() => addWidget('bg', key)}>Add Large</Button>
+            </div>
+          </div>
+        )
+      })}
 
       <DndContext
         onDragStart={handleDragStart}
@@ -265,29 +341,36 @@ const Board = () => {
               'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
           }}
         >
-          {draggingWidgets.map(wgt => (
-            <Widget
-              key={wgt.id}
-              widget={wgt}
-              gridSize={GRID_SIZE}
-              isDragging={wgt.id === activeId}
-              style={{ visibility: wgt.id === activeId ? 'hidden' : 'visible' }}
-            >
-              <div className="flex flex-wrap gap-3">
-                {(Object.keys(sizeMap) as T_WidgetSize[]).map(key => {
-                  return (
-                    <Button
-                      variant={'ghost'}
-                      size={'icon'}
-                      onClick={() => resizeWidget(wgt.id, key)}
-                    >
-                      {key.toUpperCase()}
-                    </Button>
-                  )
-                })}
-              </div>
-            </Widget>
-          ))}
+          {draggingWidgets.map(wgt => {
+            const widgetType = widgetTypes.find(swgt => swgt.id === wgt.id)!
+            const Widget = componentTypeMap[widgetType.componentType].component
+
+            return (
+              <Widget
+                key={wgt.id}
+                widget={wgt}
+                gridSize={GRID_SIZE}
+                isDragging={wgt.id === activeId}
+                style={{
+                  visibility: wgt.id === activeId ? 'hidden' : 'visible',
+                }}
+              >
+                <div className="flex flex-wrap gap-3">
+                  {(Object.keys(sizeMap) as T_WidgetSize[]).map(key => {
+                    return (
+                      <Button
+                        variant={'ghost'}
+                        size={'icon'}
+                        onClick={() => resizeWidget(wgt.id, key)}
+                      >
+                        {key.toUpperCase()}
+                      </Button>
+                    )
+                  })}
+                </div>
+              </Widget>
+            )
+          })}
 
           <DragOverlay>
             {activeWidget && (

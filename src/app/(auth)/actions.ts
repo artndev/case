@@ -15,7 +15,7 @@ export const validateCaseName = async (
   return axios
     .get<I_AxiosResponse<boolean>>('/api/casenames', {
       headers: {
-        'X-API-KEY': process.env.X_API_KEY!,
+        'X-API-KEY': process.env.API_KEY!,
       },
       params: {
         value: caseName,
