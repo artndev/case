@@ -8,11 +8,10 @@ import {
   DragOverlay,
   DragStartEvent,
 } from '@dnd-kit/core'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   I_ComponentSettings,
   I_Widget,
-  I_WidgetProps,
   I_WidgetType,
   T_ComponentType,
   T_WidgetSize,
