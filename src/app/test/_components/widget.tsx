@@ -35,20 +35,24 @@ const Widget: React.FC<I_WidgetProps> = ({
         willChange: 'left, top',
         ...style,
       }}
-      className={`
-        flex flex-col gap-3
+      className="p-1"
+    >
+      <div
+        className={`
+        flex flex-col gap-3 w-full h-full
         bg-blue-600 text-white font-semibold rounded-sm 
         p-3 shadow-sm select-none touch-none
       `}
-    >
-      <div
-        {...listeners}
-        {...attributes}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
-        ⠿
+        <div
+          {...listeners}
+          {...attributes}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
+          ⠿
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   )
 }

@@ -8,8 +8,9 @@ import {
   DragOverlay,
   DragStartEvent,
 } from '@dnd-kit/core'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
+  I_ComponentSettings,
   I_Widget,
   I_WidgetProps,
   I_WidgetType,
@@ -31,14 +32,8 @@ export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
   bg: { w: 8, h: 12 },
 }
 
-// Map each widget to its component
-export const componentTypeMap: Record<
-  T_ComponentType,
-  {
-    displayName: string
-    component: React.FC<I_WidgetProps>
-  }
-> = {
+// Map each widget to its component settings
+export const componentTypeMap: Record<T_ComponentType, I_ComponentSettings> = {
   'widget-1': {
     displayName: 'Widget #1',
     component: Widget1,
@@ -172,12 +167,31 @@ const pushWidgets = (
   return updated
 }
 
+const getInitialWidgets = () => {
+  if (typeof window === 'undefined') return initialWidgets
+
+  const data = localStorage.getItem('widgets')
+  if (data) return JSON.parse(data) as I_Widget[]
+
+  return initialWidgets
+}
+
+const getInitialWidgetTypes = () => {
+  if (typeof window === 'undefined') return initialWidgetTypes
+
+  const data = localStorage.getItem('widgetTypes')
+  if (data) return JSON.parse(data) as I_WidgetType[]
+
+  return initialWidgetTypes
+}
+
 const Board = () => {
-  const [widgets, setWidgets] = useState<I_Widget[]>(initialWidgets)
+  const [widgets, setWidgets] = useState<I_Widget[]>(getInitialWidgets)
   const [draggingWidgets, setDraggingWidgets] =
-    useState<I_Widget[]>(initialWidgets)
-  const [widgetTypes, setWidgetTypes] =
-    useState<I_WidgetType[]>(initialWidgetTypes)
+    useState<I_Widget[]>(getInitialWidgets)
+  const [widgetTypes, setWidgetTypes] = useState<I_WidgetType[]>(
+    getInitialWidgetTypes
+  )
   const [activeId, setActiveId] = useState<number | null>(null)
 
   // Remember starting grid coords of dragged widget
@@ -379,6 +393,16 @@ const Board = () => {
           </DragOverlay>
         </div>
       </DndContext>
+
+      <Button
+        className="w-[max-content]"
+        onClick={() => {
+          localStorage.setItem('widgets', JSON.stringify(widgets))
+          localStorage.setItem('widgetTypes', JSON.stringify(widgetTypes))
+        }}
+      >
+        Save Changes
+      </Button>
     </div>
   )
 }
