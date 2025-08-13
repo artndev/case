@@ -13,16 +13,16 @@ import {
   I_ComponentSettings,
   I_Widget,
   I_WidgetType,
-  T_ComponentType,
   T_WidgetSize,
+  T_WidgetType,
 } from '../_types'
 import WidgetOverlay from './widget-overlay'
 import Widget1 from './widgets/widget-1'
 import Widget2 from './widgets/widget-2'
 
-const GRID_SIZE = 25
-const MAX_COLS = 50
-const MAX_ROWS = 20
+export const GRID_SIZE = 25
+export const MAX_COLS = 50
+export const MAX_ROWS = 20
 
 // Map each widget size to its grid dimensions
 export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
@@ -32,7 +32,7 @@ export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
 }
 
 // Map each widget to its component settings
-export const componentTypeMap: Record<T_ComponentType, I_ComponentSettings> = {
+export const widgetTypeMap: Record<T_WidgetType, I_ComponentSettings> = {
   'widget-1': {
     displayName: 'Widget #1',
     component: Widget1,
@@ -46,15 +46,15 @@ export const componentTypeMap: Record<T_ComponentType, I_ComponentSettings> = {
 export const initialWidgetTypes: I_WidgetType[] = [
   {
     id: 1,
-    componentType: 'widget-1',
+    widgetType: 'widget-1',
   },
   {
     id: 2,
-    componentType: 'widget-2',
+    widgetType: 'widget-2',
   },
   {
     id: 3,
-    componentType: 'widget-2',
+    widgetType: 'widget-2',
   },
 ]
 
@@ -119,16 +119,40 @@ const findEmptySpot = (
   widgets: I_Widget[],
   widget: I_Widget
 ): { x: number; y: number } | null => {
-  const { w, h } = sizeMap[widget.size]
+  const occupied: boolean[][] = Array.from({ length: MAX_ROWS }, () =>
+    Array(MAX_COLS).fill(false)
+  )
 
+  widgets.forEach(wgt => {
+    if (wgt.id === widget.id) {
+      return
+    }
+
+    const { w, h } = sizeMap[wgt.size]
+    for (let y = wgt.y; y < wgt.y + h; y++) {
+      for (let x = wgt.x; x < wgt.x + w; x++) {
+        if (y < MAX_ROWS && x < MAX_COLS) occupied[y][x] = true
+      }
+    }
+  })
+
+  const { w, h } = sizeMap[widget.size]
   for (let row = 0; row <= MAX_ROWS - h; row++) {
     for (let col = 0; col <= MAX_COLS - w; col++) {
-      const candidate = { ...widget, x: col, y: row }
-      const isOverlapped = widgets.some(
-        wgt => wgt.id !== widget.id && isOverlapping(candidate, wgt)
-      )
+      let isFree = true
 
-      if (!isOverlapped) return { x: col, y: row }
+      innerLoop: for (let y = row; y < row + h; y++) {
+        for (let x = col; x < col + w; x++) {
+          if (occupied[y][x]) {
+            isFree = false
+            break innerLoop
+          }
+        }
+      }
+
+      if (isFree) {
+        return { x: col, y: row }
+      }
     }
   }
 
@@ -154,7 +178,9 @@ const pushWidgets = (
 
     for (const wgt of collisions) {
       const spot = findEmptySpot(updated, wgt)
-      if (!spot) return null
+      if (!spot) {
+        return null
+      }
 
       wgt.x = spot.x
       wgt.y = spot.y
@@ -257,7 +283,7 @@ const Board = () => {
 
   /* WIDGET MANIPULATIONS */
 
-  const addWidget = (size: T_WidgetSize, componentType: T_ComponentType) => {
+  const addWidget = (size: T_WidgetSize, widgetType: T_WidgetType) => {
     const widget: I_Widget = {
       id: currentId.current++,
       size,
@@ -280,7 +306,7 @@ const Board = () => {
       ...prev,
       {
         id: widget.id,
-        componentType,
+        widgetType,
       },
     ])
     setWidgets(prev => [...prev, widget])
@@ -325,10 +351,10 @@ const Board = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {(Object.keys(componentTypeMap) as T_ComponentType[]).map(key => {
+      {(Object.keys(widgetTypeMap) as T_WidgetType[]).map(key => {
         return (
           <div className="flex flex-col gap-3">
-            {componentTypeMap[key].displayName}
+            {widgetTypeMap[key].displayName}
             <div className="flex gap-3">
               <Button onClick={() => addWidget('sm', key)}>Add Small</Button>
               <Button onClick={() => addWidget('md', key)}>Add Medium</Button>
@@ -356,7 +382,7 @@ const Board = () => {
         >
           {draggingWidgets.map(wgt => {
             const widgetType = widgetTypes.find(swgt => swgt.id === wgt.id)!
-            const Widget = componentTypeMap[widgetType.componentType].component
+            const Widget = widgetTypeMap[widgetType.widgetType].component
 
             return (
               <Widget

@@ -1,6 +1,6 @@
 export type T_WidgetSize = 'sm' | 'md' | 'bg'
 
-export type T_ComponentType = 'widget-1' | 'widget-2'
+export type T_WidgetType = 'widget-1' | 'widget-2'
 
 export interface I_ComponentSettings {
   displayName: string
@@ -9,7 +9,7 @@ export interface I_ComponentSettings {
 
 export interface I_WidgetType {
   id: number
-  componentType: T_ComponentType
+  widgetType: T_WidgetType
 }
 
 export interface I_Widget {
