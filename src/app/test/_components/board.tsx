@@ -20,9 +20,9 @@ import WidgetOverlay from './widget-overlay'
 import Widget1 from './widgets/widget-1'
 import Widget2 from './widgets/widget-2'
 
-export const GRID_SIZE = 25
-export const MAX_COLS = 50
-export const MAX_ROWS = 20
+const GRID_SIZE = 25
+const MAX_COLS = 50
+const MAX_ROWS = 20
 
 // Map each widget size to its grid dimensions
 export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
@@ -31,7 +31,7 @@ export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
   bg: { w: 8, h: 12 },
 }
 
-// Map each widget to its component settings
+// Map each widget to its widget type settings
 export const widgetTypeMap: Record<T_WidgetType, I_ComponentSettings> = {
   'widget-1': {
     displayName: 'Widget #1',
@@ -160,8 +160,7 @@ const findEmptySpot = (
 }
 
 /**
- * Recursively update widgets to avoid overlap when moving one \
- * _Run BFS from start until all widgets are placed without any collisions_
+ * Recursively update widgets to avoid overlap when moving one
  */
 const pushWidgets = (
   widgets: I_Widget[],
