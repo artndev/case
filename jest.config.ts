@@ -16,7 +16,7 @@ const jestConfig: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  roots: ['./src/app/board/_tests'],
+  roots: ['<rootDir>/src/app/board/_tests'],
   testEnvironment: 'node',
   setupFiles: ['dotenv/config'],
 }
