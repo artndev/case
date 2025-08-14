@@ -1,6 +1,6 @@
 import React from 'react'
 import Widget from '../widget'
-import { I_WidgetProps } from '@/app/test/_types'
+import { I_WidgetProps } from '@/app/board/_types'
 
 const Widget1: React.FC<I_WidgetProps> = ({ children, ...props }) => {
   return (
