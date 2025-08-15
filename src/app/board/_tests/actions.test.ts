@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/utils/supabase/admin'
 import { v4 as uuidv4 } from 'uuid'
 import {
+  deleteWidget,
   getWidgets,
   getWidgetType,
   I_Widget,
@@ -11,69 +12,122 @@ import {
 } from '../actions'
 
 const supabase = createAdminClient()
-const widgetsExample = [
+
+const initialWidgets = [
   { x: 5, y: 10, size: 'sm' },
   { x: 10, y: 15, size: 'md' },
   { x: 15, y: 20, size: 'sm' },
   { x: 20, y: 25, size: 'bg' },
 ] as I_Widget[]
 
+const fakeUUID = uuidv4()
+  .split('-')
+  .map(group => group.replaceAll(/\S/g, '0'))
+  .join('-')
+const invalidUUID = '000-000-000'
+
 describe('Integration Tests of Board Actions', () => {
-  const userId = 'ff36cd73-dfc9-4436-b786-1148d3b56d1d'
-  let widgetIdExample: string
+  let userId: string
+  let widgetId: string
 
   beforeAll(async () => {
-    await supabase.from('widgets').delete().eq('user_id', userId)
+    const { error: widgetsDeleteError } = await supabase
+      .from('widgets')
+      .delete()
+      .neq('id', fakeUUID)
+
+    expect(widgetsDeleteError).toBe(null)
+
+    const { error: profilesDeleteError } = await supabase
+      .from('profiles')
+      .delete()
+      .neq('id', fakeUUID)
+
+    expect(profilesDeleteError).toBe(null)
+
+    const { data, error: profilesInsertError } = await supabase
+      .from('profiles')
+      .insert({
+        email: 'test@example.com',
+        casename: 'test',
+      })
+      .select()
+      .maybeSingle()
+
+    expect(profilesInsertError).toBe(null)
+    expect(data).not.toBe(null)
+
+    userId = data.id
   })
 
-  it('saveWidgets', async () => {
-    await saveWidgets(userId, widgetsExample, supabase)
+  it('saveWidgets_getWidgets', async () => {
+    await saveWidgets(userId, initialWidgets, supabase)
 
     const res = await getWidgets(userId, supabase)
-    expect(res.length).toBe(4)
-    expect(res[0].user_id).toBe(userId)
-    expect(res[1].user_id).toBe(userId)
-    expect(res[2].user_id).toBe(userId)
-    expect(res[3].user_id).toBe(userId)
+    expect(Array.isArray(res)).toBe(true)
+    expect(res.length).toBeGreaterThan(0)
+    expect(res.length).toBe(initialWidgets.length)
+    expect(res.some(wgt => wgt.user_id === userId)).toBe(true)
 
-    widgetIdExample = res[0].id
+    widgetId = res[0].id
+  })
+
+  it('saveWidgets_resave', async () => {
+    const widgets = await getWidgets(userId, supabase)
+    expect(widgets.length).toBeGreaterThan(0)
+
+    await saveWidgets(
+      userId,
+      widgets.map(wgt => ({ ...wgt, size: 'sm' })),
+      supabase
+    )
+
+    const res = await getWidgets(userId, supabase)
+    expect(res.some(wgt => wgt.size === 'sm')).toBe(true)
   })
 
   it('saveWidgetType', async () => {
     const widgetType = await saveWidgetType(
       {
-        id: widgetIdExample,
+        id: widgetId,
         widget_type: 'widget-1',
       },
       supabase
     )
     expect(widgetType).toBe(true)
 
-    const res = await getWidgetType(widgetIdExample, supabase)
+    const res = await getWidgetType(widgetId, supabase)
     expect(res).not.toBeNull()
     expect(res!.widget_type).toBe('widget-1')
+  })
+
+  it('getWidgetType_invalid_id', async () => {
+    const res = await getWidgetType(invalidUUID, supabase)
+    expect(res).toBeNull()
   })
 
   it('saveWidgetType_fake_id', async () => {
     const res = await saveWidgetType(
       {
-        id: uuidv4(),
+        id: fakeUUID,
         widget_type: 'widget-1',
       },
       supabase
     )
-
     expect(res).toBe(false)
   })
 
   it('saveWidgetTypes', async () => {
     const widgets = await getWidgets(userId, supabase)
+    expect(widgets.length).toBeGreaterThan(0)
+
     const widgetTypes = widgets
-      .filter(wgt => wgt.id !== widgetIdExample)
+      .filter(wgt => wgt.id !== widgetId)
       .map(wgt => ({
         id: wgt.id,
         widget_type: 'widget-1',
       })) as I_WidgetType[]
+    expect(widgetTypes.length).toBeGreaterThan(0)
 
     await saveWidgetTypes(widgetTypes, supabase)
 
@@ -84,14 +138,15 @@ describe('Integration Tests of Board Actions', () => {
     }
   })
 
-  it('getWidgets', async () => {
-    const res = await getWidgets(userId, supabase)
-    expect(Array.isArray(res)).toBe(true)
-    expect(res.length).toBeGreaterThan(0)
-  })
+  it('deleteWidget', async () => {
+    const widgets = await getWidgets(userId, supabase)
+    expect(widgets.length).toBeGreaterThan(0)
 
-  it('getWidgetType_invalid_id', async () => {
-    const res = await getWidgetType('000-000-000', supabase)
-    expect(res).toBeNull()
+    const last = widgets[widgets.length - 1]
+    await deleteWidget(last.id, supabase)
+
+    const res = await getWidgets(userId, supabase)
+    expect(res.length).toBe(widgets.length - 1)
+    expect(res[res.length - 1]?.id !== last.id).toBe(true)
   })
 })

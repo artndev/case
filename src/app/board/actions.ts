@@ -134,9 +134,27 @@ export const getWidgetType = async (
     .maybeSingle()
 
   if (error) {
-    console.log('Error has occurred while fetching widget types', error)
+    console.log('Error has occurred while fetching widget type', error)
     return null
   }
 
   return data
+}
+
+export const deleteWidget = async (
+  widgetId: string,
+  client?:
+    | ReturnType<typeof createClient>
+    | ReturnType<typeof createAdminClient>
+): Promise<void> => {
+  const supabase = await (client ? Promise.resolve(client) : createClient())
+
+  const { error } = await supabase.from('widgets').delete().eq('id', widgetId)
+
+  if (error) {
+    console.log('Error has occurred while deleting widget', error)
+    return
+  }
+
+  console.log('Widget has been deleted successfully')
 }
