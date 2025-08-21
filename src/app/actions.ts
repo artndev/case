@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { I_StatePayload } from './types'
+import { I_StatePayload } from './_types'
 import { createAdminClient } from '@/utils/supabase/admin'
 
 export const verifyState = (state: string): I_StatePayload | null => {

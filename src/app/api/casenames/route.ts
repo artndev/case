@@ -1,29 +1,12 @@
 import { createAdminClient } from '@/utils/supabase/admin'
 import { NextResponse } from 'next/server'
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL!,
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'X-Api-Key, Content-Type',
-  'Access-Control-Allow-Credentials': 'false',
-}
-
-export const OPTIONS = async () => {
-  return new NextResponse(null, {
-    headers: CORS_HEADERS,
-    status: 204,
-  })
-}
-
 export const GET = async (request: Request) => {
   const apiKey = request.headers.get('X-Api-Key')
   if (apiKey !== process.env.X_API_KEY) {
     return NextResponse.json(
       { message: 'Access is forbidden', answer: null },
-      {
-        headers: CORS_HEADERS,
-        status: 401,
-      }
+      { status: 401 }
     )
   }
 
@@ -33,10 +16,7 @@ export const GET = async (request: Request) => {
   if (!value) {
     return NextResponse.json(
       { message: 'Value is not provided', answer: null },
-      {
-        headers: CORS_HEADERS,
-        status: 400,
-      }
+      { status: 400 }
     )
   }
 
@@ -51,10 +31,7 @@ export const GET = async (request: Request) => {
   if (selectError) {
     return NextResponse.json(
       { message: 'Server is not responding', answer: null },
-      {
-        headers: CORS_HEADERS,
-        status: 500,
-      }
+      { status: 500 }
     )
   }
 
@@ -63,9 +40,6 @@ export const GET = async (request: Request) => {
       message: 'Casename was got successfully',
       answer: data?.casename ? true : false,
     },
-    {
-      headers: CORS_HEADERS,
-      status: 200,
-    }
+    { status: 200 }
   )
 }

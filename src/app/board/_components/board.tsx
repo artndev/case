@@ -1,5 +1,6 @@
 'use client'
 
+import { useAuthContext } from '@/app/_contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import {
   DndContext,
@@ -8,7 +9,7 @@ import {
   DragOverlay,
   DragStartEvent,
 } from '@dnd-kit/core'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   I_ComponentSettings,
   I_Widget,
@@ -19,9 +20,11 @@ import {
 import WidgetOverlay from './widget-overlay'
 import Widget1 from './widgets/widget-1'
 import Widget2 from './widgets/widget-2'
+import { Loader2 } from 'lucide-react'
+import { getWidgets } from '../../api/widgets/actions'
 
 const GRID_SIZE = 25
-const MAX_COLS = 50
+const MAX_COLS = 30
 const MAX_ROWS = 20
 
 // Map each widget size to its grid dimensions
@@ -210,7 +213,24 @@ const getInitialWidgetTypes = () => {
 }
 
 const Board = () => {
-  const [widgets, setWidgets] = useState<I_Widget[]>(getInitialWidgets)
+  const { user, loading } = useAuthContext()
+
+  const [widgets, setWidgets] = useState<I_Widget[]>([])
+
+  // useEffect(() => {
+  //   if (!user?.id) {
+  //     return
+  //   }
+
+  //   const _getWidgets = async () => {
+  //     const data = await getWidgets(user.id)
+
+  //     setWidgets(data as I_Widget[])
+  //   }
+
+  //   _getWidgets()
+  // }, [user])
+
   const [draggingWidgets, setDraggingWidgets] =
     useState<I_Widget[]>(getInitialWidgets)
   const [widgetTypes, setWidgetTypes] = useState<I_WidgetType[]>(
@@ -349,85 +369,97 @@ const Board = () => {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {(Object.keys(widgetTypeMap) as T_WidgetType[]).map(key => {
-        return (
-          <div className="flex flex-col gap-3">
-            {widgetTypeMap[key].displayName}
-            <div className="flex gap-3">
-              <Button onClick={() => addWidget('sm', key)}>Add Small</Button>
-              <Button onClick={() => addWidget('md', key)}>Add Medium</Button>
-              <Button onClick={() => addWidget('bg', key)}>Add Large</Button>
-            </div>
-          </div>
-        )
-      })}
-
-      <DndContext
-        onDragStart={handleDragStart}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <div
-          className="relative border rounded-sm bg-white"
-          style={{
-            width: GRID_SIZE * MAX_COLS,
-            height: GRID_SIZE * MAX_ROWS,
-            backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-            backgroundImage:
-              'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
-          }}
-        >
-          {draggingWidgets.map(wgt => {
-            const widgetType = widgetTypes.find(swgt => swgt.id === wgt.id)!
-            const Widget = widgetTypeMap[widgetType.widgetType].component
-
+    <>
+      {!loading ? (
+        <div className="flex flex-col gap-6">
+          {(Object.keys(widgetTypeMap) as T_WidgetType[]).map(key => {
             return (
-              <Widget
-                key={wgt.id}
-                widget={wgt}
-                gridSize={GRID_SIZE}
-                isDragging={wgt.id === activeId}
-                style={{
-                  visibility: wgt.id === activeId ? 'hidden' : 'visible',
-                }}
-              >
-                <div className="flex flex-wrap gap-3">
-                  {(Object.keys(sizeMap) as T_WidgetSize[]).map(key => {
-                    return (
-                      <Button
-                        variant={'ghost'}
-                        size={'icon'}
-                        onClick={() => resizeWidget(wgt.id, key)}
-                      >
-                        {key.toUpperCase()}
-                      </Button>
-                    )
-                  })}
+              <div className="flex flex-col gap-3">
+                {widgetTypeMap[key].displayName}
+                <div className="flex gap-3">
+                  <Button onClick={() => addWidget('sm', key)}>
+                    Add Small
+                  </Button>
+                  <Button onClick={() => addWidget('md', key)}>
+                    Add Medium
+                  </Button>
+                  <Button onClick={() => addWidget('bg', key)}>
+                    Add Large
+                  </Button>
                 </div>
-              </Widget>
+              </div>
             )
           })}
 
-          <DragOverlay>
-            {activeWidget && (
-              <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
-            )}
-          </DragOverlay>
-        </div>
-      </DndContext>
+          <DndContext
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div
+              className="relative border rounded-sm bg-white"
+              style={{
+                width: GRID_SIZE * MAX_COLS,
+                height: GRID_SIZE * MAX_ROWS,
+                backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+                backgroundImage:
+                  'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
+              }}
+            >
+              {draggingWidgets.map(wgt => {
+                const widgetType = widgetTypes.find(swgt => swgt.id === wgt.id)!
+                const Widget = widgetTypeMap[widgetType.widgetType].component
 
-      <Button
-        className="w-[max-content]"
-        onClick={() => {
-          localStorage.setItem('widgets', JSON.stringify(widgets))
-          localStorage.setItem('widgetTypes', JSON.stringify(widgetTypes))
-        }}
-      >
-        Save Changes
-      </Button>
-    </div>
+                return (
+                  <Widget
+                    key={wgt.id}
+                    widget={wgt}
+                    gridSize={GRID_SIZE}
+                    isDragging={wgt.id === activeId}
+                    style={{
+                      visibility: wgt.id === activeId ? 'hidden' : 'visible',
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-3">
+                      {(Object.keys(sizeMap) as T_WidgetSize[]).map(key => {
+                        return (
+                          <Button
+                            variant={'ghost'}
+                            size={'icon'}
+                            onClick={() => resizeWidget(wgt.id, key)}
+                          >
+                            {key.toUpperCase()}
+                          </Button>
+                        )
+                      })}
+                    </div>
+                  </Widget>
+                )
+              })}
+
+              <DragOverlay>
+                {activeWidget && (
+                  <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
+                )}
+              </DragOverlay>
+            </div>
+          </DndContext>
+
+          <Button
+            className="w-[max-content]"
+            onClick={() => {
+              localStorage.setItem('widgets', JSON.stringify(widgets))
+              localStorage.setItem('widgetTypes', JSON.stringify(widgetTypes))
+            }}
+          >
+            Save Changes
+          </Button>
+        </div>
+      ) : (
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      )}
+    </>
   )
 }
 

@@ -1,3 +1,5 @@
+import { User } from '@supabase/supabase-js'
+
 declare global {
   export type Dictionary<T> = {
     [key: string]: T
@@ -15,6 +17,11 @@ export interface I_StatePayload {
 export interface I_AxiosResponse<T> {
   message: string
   answer: T
+}
+
+export interface I_AuthContext {
+  user: User | undefined
+  loading: boolean
 }
 
 export {}
