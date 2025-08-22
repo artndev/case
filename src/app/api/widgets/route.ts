@@ -1,8 +1,3 @@
-import {
-  deleteWidget,
-  getWidgets,
-  saveWidgets,
-} from '@/app/api/widgets/actions'
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import {
@@ -11,6 +6,7 @@ import {
   T_deleteWidget_id,
   T_saveWidgets_body,
 } from './_validations'
+import { deleteWidget, getWidgets, saveWidgets } from './actions'
 
 export const GET = async (request: Request) => {
   const apiKey = request.headers.get('X-Api-Key')
