@@ -22,7 +22,7 @@ export const saveWidgets = async (
     return null
   }
 
-  console.log('Widgets have been saved successfully', widgets)
+  console.log('Widgets have been saved successfully')
   return true
 }
 
@@ -45,15 +45,14 @@ export const getWidgets = async (): Promise<I_Widget[] | null> => {
     return null
   }
 
+  console.log('Widgets have been got successfully')
   return data
 }
 
-export const deleteWidget = async (
-  widgetId: string
-): Promise<boolean | null> => {
+export const deleteWidget = async (id: string): Promise<boolean | null> => {
   const supabase = await createClient()
 
-  const { error } = await supabase.from('widgets').delete().eq('id', widgetId)
+  const { error } = await supabase.from('widgets').delete().eq('id', id)
 
   if (error) {
     console.log('Error has occurred while deleting widget', error)
