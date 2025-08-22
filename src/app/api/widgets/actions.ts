@@ -1,27 +1,29 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { I_Widget } from './_types'
+import { v4 as uuidv4 } from 'uuid'
+import { I_Widget, I_WidgetAPI } from './_types'
 
 export const saveWidgets = async (
   userId: string,
-  widgets: PartialKeys<
-    Omit<I_Widget, 'user_id' | 'widget_type' | 'created_at'>,
-    'id'
-  >[]
-): Promise<void> => {
+  widgets: I_WidgetAPI[]
+): Promise<boolean | null> => {
   const supabase = await createClient()
 
+  // If row exist, provided id will be overlapped
   const { error } = await supabase
     .from('widgets')
-    .upsert([...widgets.map(wgt => ({ user_id: userId, ...wgt }))])
+    .upsert([
+      ...widgets.map(wgt => ({ id: uuidv4(), user_id: userId, ...wgt })),
+    ])
 
   if (error) {
     console.log('Error has occurred while saving widgets', error)
-    return
+    return null
   }
 
   console.log('Widgets have been saved successfully', widgets)
+  return true
 }
 
 export const getWidgets = async (): Promise<I_Widget[] | null> => {
@@ -46,15 +48,18 @@ export const getWidgets = async (): Promise<I_Widget[] | null> => {
   return data
 }
 
-export const deleteWidget = async (widgetId: string): Promise<void> => {
+export const deleteWidget = async (
+  widgetId: string
+): Promise<boolean | null> => {
   const supabase = await createClient()
 
   const { error } = await supabase.from('widgets').delete().eq('id', widgetId)
 
   if (error) {
     console.log('Error has occurred while deleting widget', error)
-    return
+    return null
   }
 
   console.log('Widget has been deleted successfully')
+  return true
 }

@@ -1,10 +1,6 @@
 import { User } from '@supabase/supabase-js'
 
 declare global {
-  export type Dictionary<T> = {
-    [key: string]: T
-  }
-
   export type PartialKeys<T, K extends keyof T> = Omit<T, K> &
     Partial<Pick<T, K>>
 }

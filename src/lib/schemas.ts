@@ -28,3 +28,23 @@ export const resetPasswordSchema = z.object({
 export const updatePasswordSchema = z.object({
   password: signInSchema.shape.password,
 })
+
+/* VALIDATION */
+
+export const saveWidgets_body = <T extends z.ZodTypeAny>(wgt: T) =>
+  z.object({
+    user_id: z
+      .string()
+      .uuid("'user_id' must be in UUID format")
+      .nonempty("'user_id' cannot be null"),
+    widgets: z.array(
+      z.object({
+        id: z
+          .string()
+          .uuid("'id' must be in UUID format")
+          .nonempty("'id' cannot be null"),
+        type: z.string(),
+        config: z.record(z.any()).optional(),
+      })
+    ),
+  })
