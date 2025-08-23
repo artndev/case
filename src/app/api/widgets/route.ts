@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
-import {
-  deleteWidget_id,
-  saveWidgets_body,
-  T_deleteWidget_id,
-  T_saveWidgets_body,
-} from './_validations'
+import validations from '@/app/api/_validations'
 import { deleteWidget, getWidgets, saveWidgets } from './actions'
 
 export const GET = async (request: Request) => {
@@ -43,11 +38,11 @@ export const POST = async (request: Request) => {
     )
   }
 
-  let data: T_saveWidgets_body
+  let data: Widgets_API.POST
   try {
     const body = await request.json()
 
-    data = saveWidgets_body.parse(body)
+    data = validations.Widgets_API.POST.parse(body)
   } catch (err) {
     console.log(err)
 
@@ -100,9 +95,9 @@ export const DELETE = async (request: Request) => {
     )
   }
 
-  let data: T_deleteWidget_id
+  let data: string
   try {
-    data = deleteWidget_id.parse(id)
+    data = validations.Widgets_API.DELETE.params.id.parse(id)
   } catch (err) {
     console.log(err)
 

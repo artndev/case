@@ -1,7 +1,6 @@
 'use client'
 
 import { useAuthContext } from '@/app/_contexts/auth-context'
-import { T_saveWidgets_body } from '@/app/api/widgets/_validations'
 import { Button } from '@/components/ui/button'
 import {
   DndContext,
@@ -13,14 +12,7 @@ import {
 import { Loader2, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import {
-  I_BoardProps,
-  I_Widget,
-  I_WidgetProps,
-  I_WidgetType,
-  T_WidgetSize,
-  T_WidgetType,
-} from '../_types'
+import { I_BoardProps, I_WidgetProps } from '../_types'
 import { deleteWidget, saveWidgets } from '../actions'
 import WidgetOverlay from './widget-overlay'
 import Widget1 from './widgets/widget-1'
@@ -31,14 +23,20 @@ const MAX_COLS = 30
 const MAX_ROWS = 20
 
 // Map each widget size to its grid dimensions
-export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
+export const sizeMap: Record<
+  WidgetSettings.T_WidgetSize,
+  { w: number; h: number }
+> = {
   sm: { w: 8, h: 8 },
   md: { w: 8, h: 10 },
   bg: { w: 8, h: 12 },
 }
 
 // Map each widget to its widget type settings
-export const widgetTypeMap: Record<T_WidgetType, React.FC<I_WidgetProps>> = {
+export const widgetTypeMap: Record<
+  WidgetSettings.T_WidgetType,
+  React.FC<I_WidgetProps>
+> = {
   'widget-1': Widget1,
   'widget-2': Widget2,
 }
@@ -46,7 +44,10 @@ export const widgetTypeMap: Record<T_WidgetType, React.FC<I_WidgetProps>> = {
 /**
  * Determine if two widgets overlap on the grid
  */
-const isOverlapping = (a: I_Widget, b: I_Widget): boolean => {
+const isOverlapping = (
+  a: Widgets.I_Widget_Board,
+  b: Widgets.I_Widget_Board
+): boolean => {
   const { w: aw, h: ah } = sizeMap[a.size]
   const { w: bw, h: bh } = sizeMap[b.size]
 
@@ -66,7 +67,7 @@ const clamp = (value: number, min: number, max: number): number => {
 const clampPosition = (
   x: number,
   y: number,
-  size: T_WidgetSize
+  size: WidgetSettings.T_WidgetSize
 ): { x: number; y: number } => {
   const { w, h } = sizeMap[size]
 
@@ -80,8 +81,8 @@ const clampPosition = (
  * Find first free grid spot where widget fits without overlapping
  */
 const findEmptySpot = (
-  widgets: I_Widget[],
-  widget: I_Widget
+  widgets: Widgets.I_Widget_Board[],
+  widget: Widgets.I_Widget_Board
 ): { x: number; y: number } | null => {
   const occupied: boolean[][] = Array.from({ length: MAX_ROWS }, () =>
     Array(MAX_COLS).fill(false)
@@ -127,11 +128,11 @@ const findEmptySpot = (
  * Recursively update widgets to avoid overlap when moving one
  */
 const pushWidgets = (
-  widgets: I_Widget[],
-  start: I_Widget
-): I_Widget[] | null => {
+  widgets: Widgets.I_Widget_Board[],
+  start: Widgets.I_Widget_Board
+): Widgets.I_Widget_Board[] | null => {
   const updated = widgets.map(wgt => ({ ...wgt }))
-  const queue: I_Widget[] = [{ ...start }]
+  const queue: Widgets.I_Widget_Board[] = [{ ...start }]
 
   while (queue.length) {
     const current = queue.shift()!
@@ -161,9 +162,10 @@ const Board: React.FC<I_BoardProps> = ({
 }) => {
   const { user, loading } = useAuthContext()
 
-  const [widgets, setWidgets] = useState<I_Widget[]>(initialWidgets)
+  const [widgets, setWidgets] =
+    useState<Widgets.I_Widget_Board[]>(initialWidgets)
   const [draggingWidgets, setDraggingWidgets] =
-    useState<I_Widget[]>(initialWidgets)
+    useState<Widgets.I_Widget_Board[]>(initialWidgets)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   // Remember starting grid coords of dragged widget
@@ -205,7 +207,7 @@ const Board: React.FC<I_BoardProps> = ({
       original.size
     )
 
-    const start: I_Widget = { ...original, x, y }
+    const start: Widgets.I_Widget_Board = { ...original, x, y }
     const updated = widgets.map(wgt => (wgt.id === activeId ? start : wgt))
     const pushed = pushWidgets(updated, start)
 
@@ -214,9 +216,14 @@ const Board: React.FC<I_BoardProps> = ({
   }
 
   const handleDragEnd = (_: DragEndEvent) => {
-    if (activeId === null) return
+    if (activeId === null) {
+      return
+    }
 
-    setWidgets(draggingWidgets) // Update saved layout
+    if (JSON.stringify(widgets) !== JSON.stringify(draggingWidgets)) {
+      setWidgets(draggingWidgets) // Update saved layout
+    }
+
     setActiveId(null)
   }
 
@@ -227,9 +234,12 @@ const Board: React.FC<I_BoardProps> = ({
 
   /* WIDGET MANIPULATIONS */
 
-  const addWidget = (size: T_WidgetSize, widgetType: I_WidgetType) => {
+  const addWidget = (
+    size: WidgetSettings.T_WidgetSize,
+    widgetType: Widgets.I_WidgetType
+  ) => {
     const { id, ...widgetTypePayload } = widgetType
-    const widget: I_Widget = {
+    const widget: Widgets.I_Widget_Board = {
       id: uuidv4(),
       size,
       x: 0,
@@ -260,7 +270,7 @@ const Board: React.FC<I_BoardProps> = ({
     await deleteWidget(id)
   }
 
-  const resizeWidget = (id: string, size: T_WidgetSize) => {
+  const resizeWidget = (id: string, size: WidgetSettings.T_WidgetSize) => {
     /* Update both layouts to avoid conflicts */
 
     setWidgets(prev => {
@@ -270,7 +280,7 @@ const Board: React.FC<I_BoardProps> = ({
       // Prevent widget from going outta grid borders
       const { x, y } = clampPosition(original.x, original.y, size)
 
-      const start: I_Widget = { ...original, size, x, y }
+      const start: Widgets.I_Widget_Board = { ...original, size, x, y }
       const updated = prev.map(wgt => (wgt.id === id ? start : wgt))
       const pushed = pushWidgets(updated, start)
 
@@ -286,7 +296,7 @@ const Board: React.FC<I_BoardProps> = ({
       // Prevent widget from going outta grid borders
       const { x, y } = clampPosition(original.x, original.y, size)
 
-      const start: I_Widget = { ...original, size, x, y }
+      const start: Widgets.I_Widget_Board = { ...original, size, x, y }
       const updated = prev.map(wgt => (wgt.id === id ? start : wgt))
       const pushed = pushWidgets(updated, start)
 
@@ -302,9 +312,7 @@ const Board: React.FC<I_BoardProps> = ({
     const saveWidgetsHandler = async () => {
       await saveWidgets({
         user_id: user!.id,
-        widgets: widgets.map(
-          ({ widget_type_details, ...payload }) => payload
-        ) as T_saveWidgets_body['widgets'],
+        widgets: widgets.map(({ widget_type_details, ...payload }) => payload),
       })
     }
 
@@ -365,20 +373,20 @@ const Board: React.FC<I_BoardProps> = ({
                     }}
                   >
                     <div className="flex flex-wrap gap-3">
-                      {(Object.keys(sizeMap) as T_WidgetSize[]).map(
-                        (key, i) => {
-                          return (
-                            <Button
-                              key={i}
-                              variant={'ghost'}
-                              size={'icon'}
-                              onClick={() => resizeWidget(wgt.id, key)}
-                            >
-                              {key.toUpperCase()}
-                            </Button>
-                          )
-                        }
-                      )}
+                      {(
+                        Object.keys(sizeMap) as WidgetSettings.T_WidgetSize[]
+                      ).map((key, i) => {
+                        return (
+                          <Button
+                            key={i}
+                            variant={'ghost'}
+                            size={'icon'}
+                            onClick={() => resizeWidget(wgt.id, key)}
+                          >
+                            {key.toUpperCase()}
+                          </Button>
+                        )
+                      })}
                       <Button
                         variant={'ghost'}
                         size={'icon'}

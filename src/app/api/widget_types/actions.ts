@@ -1,9 +1,10 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { I_WidgetType } from './_types'
 
-export const getWidgetTypes = async (): Promise<I_WidgetType[] | null> => {
+export const getWidgetTypes = async (): Promise<
+  Widgets.I_WidgetType[] | null
+> => {
   const supabase = await createClient()
 
   const { data, error } = await supabase.from('widget_types').select('*')

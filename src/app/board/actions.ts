@@ -1,13 +1,9 @@
 'use server'
 
-import {
-  T_deleteWidget_id,
-  T_saveWidgets_body,
-} from '@/app/api/widgets/_validations'
 import axios from '@/lib/axios-server'
 import { cookies } from 'next/headers'
 
-export const saveWidgets = async (data: T_saveWidgets_body) => {
+export const saveWidgets = async (data: Widgets_API.POST) => {
   const cookieStore = await cookies()
 
   return axios
@@ -20,7 +16,7 @@ export const saveWidgets = async (data: T_saveWidgets_body) => {
     .catch(err => console.log(err))
 }
 
-export const deleteWidget = async (id: T_deleteWidget_id) => {
+export const deleteWidget = async (id: string) => {
   const cookieStore = await cookies()
 
   return axios

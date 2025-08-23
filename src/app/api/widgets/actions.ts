@@ -2,11 +2,10 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
-import { I_Widget, I_WidgetAPI } from './_types'
 
 export const saveWidgets = async (
   userId: string,
-  widgets: I_WidgetAPI[]
+  widgets: Widgets_API.I_Widget[]
 ): Promise<boolean | null> => {
   const supabase = await createClient()
 
@@ -26,7 +25,7 @@ export const saveWidgets = async (
   return true
 }
 
-export const getWidgets = async (): Promise<I_Widget[] | null> => {
+export const getWidgets = async (): Promise<Widgets_API.I_Widget[] | null> => {
   const supabase = await createClient()
 
   // RLS automatically adjusts all filters

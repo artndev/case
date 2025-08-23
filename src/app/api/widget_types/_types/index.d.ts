@@ -1,13 +1,21 @@
-import { WidgetTypes } from './config'
+import { WidgetTypes } from '@/app/api/_validations/config'
 
-export type T_WidgetType = (typeof WidgetTypes)[number]
+declare global {
+  namespace WidgetSettings {
+    type T_WidgetType = (typeof WidgetTypes)[number]
+  }
 
-export interface I_WidgetType {
-  id: string
-  widget_type: T_WidgetType
-  alias: string
-  created_at: string
+  namespace Widgets {
+    export interface I_WidgetType {
+      id: string
+      widget_type: WidgetSettings.T_WidgetType
+      alias: string
+      created_at: string
+    }
+  }
+
+  namespace WidgetTypes_API {
+    export interface I_WidgetType
+      extends PartialKeys<Omit<I_WidgetType, 'created_at'>, 'id'> {}
+  }
 }
-
-export interface I_WidgetTypeAPI
-  extends PartialKeys<Omit<I_WidgetType, 'created_at'>, 'id'> {}
