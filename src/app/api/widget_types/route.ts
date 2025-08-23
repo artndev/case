@@ -10,8 +10,6 @@ export const GET = async (request: Request) => {
     )
   }
 
-  console.log('GOT REQUEST!')
-
   const res = await getWidgetTypes()
   if (!res) {
     return NextResponse.json(
