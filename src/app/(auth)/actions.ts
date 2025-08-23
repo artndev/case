@@ -1,6 +1,6 @@
 'use server'
 
-import axios from '@/lib/axios'
+import axios from '@/lib/axios-client'
 import { createClient } from '@/utils/supabase/server'
 import type { Provider } from '@supabase/supabase-js'
 import jwt from 'jsonwebtoken'

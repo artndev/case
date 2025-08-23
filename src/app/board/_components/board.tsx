@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   I_ComponentSettings,
   I_Widget,
+  I_WidgetProps,
   I_WidgetType,
   T_WidgetSize,
   T_WidgetType,
@@ -22,6 +23,7 @@ import Widget1 from './widgets/widget-1'
 import Widget2 from './widgets/widget-2'
 import { Loader2 } from 'lucide-react'
 import { getWidgets } from '../../api/widgets/actions'
+import axios from '@/lib/axios-client'
 
 const GRID_SIZE = 25
 const MAX_COLS = 30
@@ -35,15 +37,9 @@ export const sizeMap: Record<T_WidgetSize, { w: number; h: number }> = {
 }
 
 // Map each widget to its widget type settings
-export const widgetTypeMap: Record<T_WidgetType, I_ComponentSettings> = {
-  'widget-1': {
-    displayName: 'Widget #1',
-    component: Widget1,
-  },
-  'widget-2': {
-    displayName: 'Widget #2',
-    component: Widget2,
-  },
+export const widgetTypeMap: Record<T_WidgetType, React.FC<I_WidgetProps>> = {
+  'widget-1': Widget1,
+  'widget-2': Widget2,
 }
 
 export const initialWidgetTypes: I_WidgetType[] = [
@@ -215,20 +211,23 @@ const getInitialWidgetTypes = () => {
 const Board = () => {
   const { user, loading } = useAuthContext()
 
-  const [widgets, setWidgets] = useState<I_Widget[]>([])
+  const [widgets, setWidgets] = useState<I_Widget[]>(getInitialWidgets())
 
   // useEffect(() => {
   //   if (!user?.id) {
   //     return
   //   }
 
-  //   const _getWidgets = async () => {
-  //     const data = await getWidgets(user.id)
-
-  //     setWidgets(data as I_Widget[])
+  //   const getWidgets = async () => {
+  //     return await axios
+  //       .get('/api/widgets')
+  //       .then(res => res.data.answer)
+  //       .catch(err => console.log(err))
   //   }
 
-  //   _getWidgets()
+  //   console.log(getWidgets())
+
+  //   getWidgets()
   // }, [user])
 
   const [draggingWidgets, setDraggingWidgets] =
@@ -375,7 +374,7 @@ const Board = () => {
           {(Object.keys(widgetTypeMap) as T_WidgetType[]).map(key => {
             return (
               <div className="flex flex-col gap-3">
-                {widgetTypeMap[key].displayName}
+                {key}
                 <div className="flex gap-3">
                   <Button onClick={() => addWidget('sm', key)}>
                     Add Small
@@ -409,7 +408,7 @@ const Board = () => {
             >
               {draggingWidgets.map(wgt => {
                 const widgetType = widgetTypes.find(swgt => swgt.id === wgt.id)!
-                const Widget = widgetTypeMap[widgetType.widgetType].component
+                const Widget = widgetTypeMap[widgetType.widgetType]
 
                 return (
                   <Widget

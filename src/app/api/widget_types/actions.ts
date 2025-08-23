@@ -8,6 +8,8 @@ export const getWidgetTypes = async (): Promise<I_WidgetType[] | null> => {
 
   const { data, error } = await supabase.from('widget_types').select('*')
 
+  console.log(data)
+
   if (error) {
     console.log('Error has occurred while fetching widget types', error)
     return null
