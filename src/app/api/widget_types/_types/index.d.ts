@@ -9,5 +9,5 @@ export interface I_WidgetType {
   created_at: string
 }
 
-// export interface I_WidgetTypeAPI
-//   extends PartialKeys<Omit<I_WidgetType, 'created_at'>, 'id'> {}
+export interface I_WidgetTypeAPI
+  extends PartialKeys<Omit<I_WidgetType, 'created_at'>, 'id'> {}

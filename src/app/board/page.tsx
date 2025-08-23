@@ -16,7 +16,7 @@ const BoardPage = async () => {
         Cookie: cookieStore.toString(),
       },
     })
-    .then(res => res.data)
+    .then(res => res.data.answer)
     .catch(err => console.log(err))
 
   const widgetTypes = await axios
@@ -25,38 +25,13 @@ const BoardPage = async () => {
         Cookie: cookieStore.toString(),
       },
     })
-    .then(res => res.data)
+    .then(res => res.data.answer)
     .catch(err => console.log(err))
-
-  const saveWidgets = async (data: T_saveWidgets_body) => {
-    await axios
-      .post('/api/widgets', data, {
-        headers: {
-          Cookie: cookieStore.toString(),
-        },
-      })
-      .then(res => res.data)
-      .catch(err => console.log(err))
-  }
-
-  const deleteWidget = async (id: T_deleteWidget_id) => {
-    const url = new URL('/api/widgets')
-    url.searchParams.append('id', id)
-
-    await axios
-      .post(url.toString(), {
-        headers: {
-          Cookie: cookieStore.toString(),
-        },
-      })
-      .then(res => res.data)
-      .catch(err => console.log(err))
-  }
 
   return (
     <AuthProvider>
       <div className="flex justify-center items-center w-screen min-h-screen">
-        <Board />
+        <Board initialWidgets={widgets} initialWidgetTypes={widgetTypes} />
       </div>
     </AuthProvider>
   )

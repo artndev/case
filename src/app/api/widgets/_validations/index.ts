@@ -3,6 +3,10 @@ import { WidgetSizes } from '../_types/config'
 
 export const saveWidgets_body_widget = z.object({
   id: z.string().uuid("'id' must be in UUID format").optional(),
+  widget_type_id: z
+    .string()
+    .uuid("'widget_type_id' must be in UUID format")
+    .optional(),
   x: z.number().nonnegative("'x' cannot be below zero"),
   y: z.number().nonnegative("'y' cannot be below zero"),
   size: z.enum(WidgetSizes, {

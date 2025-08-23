@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuthContext } from '@/app/_contexts/auth-context'
+import { T_saveWidgets_body } from '@/app/api/widgets/_validations'
 import { Button } from '@/components/ui/button'
 import {
   DndContext,
@@ -9,21 +10,21 @@ import {
   DragOverlay,
   DragStartEvent,
 } from '@dnd-kit/core'
+import { Loader2, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 import {
-  I_ComponentSettings,
+  I_BoardProps,
   I_Widget,
   I_WidgetProps,
   I_WidgetType,
   T_WidgetSize,
   T_WidgetType,
 } from '../_types'
+import { deleteWidget, saveWidgets } from '../actions'
 import WidgetOverlay from './widget-overlay'
 import Widget1 from './widgets/widget-1'
 import Widget2 from './widgets/widget-2'
-import { Loader2 } from 'lucide-react'
-import { getWidgets } from '../../api/widgets/actions'
-import axios from '@/lib/axios-client'
 
 const GRID_SIZE = 25
 const MAX_COLS = 30
@@ -41,42 +42,6 @@ export const widgetTypeMap: Record<T_WidgetType, React.FC<I_WidgetProps>> = {
   'widget-1': Widget1,
   'widget-2': Widget2,
 }
-
-export const initialWidgetTypes: I_WidgetType[] = [
-  {
-    id: 1,
-    widgetType: 'widget-1',
-  },
-  {
-    id: 2,
-    widgetType: 'widget-2',
-  },
-  {
-    id: 3,
-    widgetType: 'widget-2',
-  },
-]
-
-const initialWidgets: I_Widget[] = [
-  {
-    id: 1,
-    size: 'sm',
-    x: 0,
-    y: 0,
-  },
-  {
-    id: 2,
-    size: 'sm',
-    x: 8,
-    y: 0,
-  },
-  {
-    id: 3,
-    size: 'sm',
-    x: 16,
-    y: 0,
-  },
-]
 
 /**
  * Determine if two widgets overlap on the grid
@@ -190,58 +155,19 @@ const pushWidgets = (
   return updated
 }
 
-const getInitialWidgets = () => {
-  if (typeof window === 'undefined') return initialWidgets
-
-  const data = localStorage.getItem('widgets')
-  if (data) return JSON.parse(data) as I_Widget[]
-
-  return initialWidgets
-}
-
-const getInitialWidgetTypes = () => {
-  if (typeof window === 'undefined') return initialWidgetTypes
-
-  const data = localStorage.getItem('widgetTypes')
-  if (data) return JSON.parse(data) as I_WidgetType[]
-
-  return initialWidgetTypes
-}
-
-const Board = () => {
+const Board: React.FC<I_BoardProps> = ({
+  initialWidgets,
+  initialWidgetTypes,
+}) => {
   const { user, loading } = useAuthContext()
 
-  const [widgets, setWidgets] = useState<I_Widget[]>(getInitialWidgets())
-
-  // useEffect(() => {
-  //   if (!user?.id) {
-  //     return
-  //   }
-
-  //   const getWidgets = async () => {
-  //     return await axios
-  //       .get('/api/widgets')
-  //       .then(res => res.data.answer)
-  //       .catch(err => console.log(err))
-  //   }
-
-  //   console.log(getWidgets())
-
-  //   getWidgets()
-  // }, [user])
-
+  const [widgets, setWidgets] = useState<I_Widget[]>(initialWidgets)
   const [draggingWidgets, setDraggingWidgets] =
-    useState<I_Widget[]>(getInitialWidgets)
-  const [widgetTypes, setWidgetTypes] = useState<I_WidgetType[]>(
-    getInitialWidgetTypes
-  )
-  const [activeId, setActiveId] = useState<number | null>(null)
+    useState<I_Widget[]>(initialWidgets)
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   // Remember starting grid coords of dragged widget
   const startPos = useRef<{ x: number; y: number } | null>(null)
-
-  // addWidget's current id
-  const currentId = useRef(initialWidgets.length + 1)
 
   const activeWidget = activeId
     ? (draggingWidgets.find(wgt => wgt.id === activeId) ?? null)
@@ -251,7 +177,7 @@ const Board = () => {
 
   const handleDragStart = (event: DragStartEvent) => {
     // Set active widget
-    const id = event.active.id as number
+    const id = event.active.id as string
     setActiveId(id)
 
     // Load saved layout
@@ -301,15 +227,18 @@ const Board = () => {
 
   /* WIDGET MANIPULATIONS */
 
-  const addWidget = (size: T_WidgetSize, widgetType: T_WidgetType) => {
+  const addWidget = (size: T_WidgetSize, widgetType: I_WidgetType) => {
+    const { id, ...widgetTypePayload } = widgetType
     const widget: I_Widget = {
-      id: currentId.current++,
+      id: uuidv4(),
       size,
       x: 0,
       y: 0,
+      widget_type_id: id,
+      widget_type_details: widgetTypePayload,
     }
-    const spot = findEmptySpot(widgets, widget)
 
+    const spot = findEmptySpot(widgets, widget)
     if (!spot) {
       alert('No space available')
       return
@@ -320,18 +249,18 @@ const Board = () => {
 
     /* Update both layouts to avoid conflicts */
 
-    setWidgetTypes(prev => [
-      ...prev,
-      {
-        id: widget.id,
-        widgetType,
-      },
-    ])
     setWidgets(prev => [...prev, widget])
     setDraggingWidgets(prev => [...prev, widget])
   }
 
-  const resizeWidget = (id: number, size: T_WidgetSize) => {
+  const deleteWidgetHandler = async (id: string) => {
+    setWidgets(prev => prev.filter(wgt => wgt.id !== id))
+    setDraggingWidgets(prev => prev.filter(wgt => wgt.id !== id))
+
+    await deleteWidget(id)
+  }
+
+  const resizeWidget = (id: string, size: T_WidgetSize) => {
     /* Update both layouts to avoid conflicts */
 
     setWidgets(prev => {
@@ -367,22 +296,37 @@ const Board = () => {
     })
   }
 
+  useEffect(() => {
+    if (loading) return
+
+    const saveWidgetsHandler = async () => {
+      await saveWidgets({
+        user_id: user!.id,
+        widgets: widgets.map(
+          ({ widget_type_details, ...payload }) => payload
+        ) as T_saveWidgets_body['widgets'],
+      })
+    }
+
+    saveWidgetsHandler()
+  }, [widgets])
+
   return (
     <>
       {!loading ? (
         <div className="flex flex-col gap-6">
-          {(Object.keys(widgetTypeMap) as T_WidgetType[]).map(key => {
+          {initialWidgetTypes.map((wgtt, i) => {
             return (
-              <div className="flex flex-col gap-3">
-                {key}
+              <div key={wgtt.id} className="flex flex-col gap-3">
+                {wgtt.alias}
                 <div className="flex gap-3">
-                  <Button onClick={() => addWidget('sm', key)}>
+                  <Button onClick={() => addWidget('sm', wgtt)}>
                     Add Small
                   </Button>
-                  <Button onClick={() => addWidget('md', key)}>
+                  <Button onClick={() => addWidget('md', wgtt)}>
                     Add Medium
                   </Button>
-                  <Button onClick={() => addWidget('bg', key)}>
+                  <Button onClick={() => addWidget('bg', wgtt)}>
                     Add Large
                   </Button>
                 </div>
@@ -407,8 +351,8 @@ const Board = () => {
               }}
             >
               {draggingWidgets.map(wgt => {
-                const widgetType = widgetTypes.find(swgt => swgt.id === wgt.id)!
-                const Widget = widgetTypeMap[widgetType.widgetType]
+                const Widget =
+                  widgetTypeMap[wgt.widget_type_details.widget_type]
 
                 return (
                   <Widget
@@ -421,17 +365,27 @@ const Board = () => {
                     }}
                   >
                     <div className="flex flex-wrap gap-3">
-                      {(Object.keys(sizeMap) as T_WidgetSize[]).map(key => {
-                        return (
-                          <Button
-                            variant={'ghost'}
-                            size={'icon'}
-                            onClick={() => resizeWidget(wgt.id, key)}
-                          >
-                            {key.toUpperCase()}
-                          </Button>
-                        )
-                      })}
+                      {(Object.keys(sizeMap) as T_WidgetSize[]).map(
+                        (key, i) => {
+                          return (
+                            <Button
+                              key={i}
+                              variant={'ghost'}
+                              size={'icon'}
+                              onClick={() => resizeWidget(wgt.id, key)}
+                            >
+                              {key.toUpperCase()}
+                            </Button>
+                          )
+                        }
+                      )}
+                      <Button
+                        variant={'ghost'}
+                        size={'icon'}
+                        onClick={() => deleteWidgetHandler(wgt.id)}
+                      >
+                        <Trash2 />
+                      </Button>
                     </div>
                   </Widget>
                 )
@@ -445,15 +399,19 @@ const Board = () => {
             </div>
           </DndContext>
 
-          <Button
+          {/* <Button
             className="w-[max-content]"
-            onClick={() => {
-              localStorage.setItem('widgets', JSON.stringify(widgets))
-              localStorage.setItem('widgetTypes', JSON.stringify(widgetTypes))
-            }}
+            onClick={() =>
+              saveWidgets({
+                user_id: user!.id,
+                widgets: widgets.map(
+                  ({ widget_type_details, ...payload }) => payload
+                ) as T_saveWidgets_body['widgets'],
+              })
+            }
           >
             Save Changes
-          </Button>
+          </Button> */}
         </div>
       ) : (
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
