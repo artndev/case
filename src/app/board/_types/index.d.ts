@@ -1,15 +1,15 @@
 declare global {
   namespace N_Board {
     interface I_Widget
-      extends Omit<Widgets.I_Widget, 'user_id' | 'created_at'> {}
+      extends Omit<N_Widgets.I_Widget, 'user_id' | 'created_at'> {}
 
-    type T_WidgetMixed = N_Board.I_Widget | Widgets.I_Widget
+    type T_WidgetMixed = N_Board.I_Widget | N_Widgets.I_Widget
   }
 }
 
 export interface I_BoardProps extends React.ComponentProps<'div'> {
-  initialWidgets: Widgets.I_Widget[]
-  initialWidgetTypes: Widgets.I_WidgetType[]
+  initialWidgets: N_Widgets.I_Widget[]
+  initialWidgetTypes: N_Widgets.I_WidgetType[]
   userId: string
 }
 

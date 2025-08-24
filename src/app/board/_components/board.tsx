@@ -42,7 +42,7 @@ const isOverlapping = (
 const clampPosition = (
   x: number,
   y: number,
-  size: WidgetSettings.T_WidgetSize
+  size: N_WidgetSettings.T_WidgetSize
 ): { x: number; y: number } => {
   const { w, h } = sizeMap[size]
 
@@ -57,7 +57,7 @@ const clampPosition = (
  */
 const findEmptySpot = (
   widgets: N_Board.T_WidgetMixed[],
-  widget: Widgets_API.I_Widget
+  widget: N_Board.T_WidgetMixed
 ): { x: number; y: number } | null => {
   const occupied: boolean[][] = Array.from({ length: MAX_ROWS }, () =>
     Array(MAX_COLS).fill(false)
@@ -209,8 +209,8 @@ const Board: React.FC<I_BoardProps> = ({
   /* WIDGET MANIPULATIONS */
 
   const addWidget = async (
-    size: WidgetSettings.T_WidgetSize,
-    widgetType: Widgets.I_WidgetType
+    size: N_WidgetSettings.T_WidgetSize,
+    widgetType: N_Widgets.I_WidgetType
   ) => {
     const { id, ...payload } = widgetType
     let widget: N_Board.I_Widget = {
@@ -244,7 +244,7 @@ const Board: React.FC<I_BoardProps> = ({
     await deleteWidget(id)
   }
 
-  const resizeWidget = (id: string, size: WidgetSettings.T_WidgetSize) => {
+  const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
     /* Update both layouts to avoid conflicts */
 
     setWidgets(prev => {
@@ -342,20 +342,20 @@ const Board: React.FC<I_BoardProps> = ({
                 }}
               >
                 <div className="flex flex-wrap gap-3">
-                  {(Object.keys(sizeMap) as WidgetSettings.T_WidgetSize[]).map(
-                    (key, i) => {
-                      return (
-                        <Button
-                          key={i}
-                          variant={'ghost'}
-                          size={'icon'}
-                          onClick={() => resizeWidget(wgt.id, key)}
-                        >
-                          {key.toUpperCase()}
-                        </Button>
-                      )
-                    }
-                  )}
+                  {(
+                    Object.keys(sizeMap) as N_WidgetSettings.T_WidgetSize[]
+                  ).map((key, i) => {
+                    return (
+                      <Button
+                        key={i}
+                        variant={'ghost'}
+                        size={'icon'}
+                        onClick={() => resizeWidget(wgt.id, key)}
+                      >
+                        {key.toUpperCase()}
+                      </Button>
+                    )
+                  })}
                   <Button
                     variant={'ghost'}
                     size={'icon'}

@@ -3,7 +3,7 @@
 import axios from '@/lib/axios-server'
 import { cookies } from 'next/headers'
 
-export const saveWidgets = async (data: Widgets_API.POST) => {
+export const saveWidgets = async (data: N_Widgets_API.POST) => {
   const cookieStore = await cookies()
 
   return axios
