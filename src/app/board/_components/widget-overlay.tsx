@@ -1,8 +1,8 @@
 'use client'
 
+import { sizeMap } from '@/lib/config'
 import React from 'react'
 import { I_WidgetOverlayProps } from '../_types'
-import { sizeMap } from './board'
 
 const WidgetOverlay: React.FC<I_WidgetOverlayProps> = ({
   widget,

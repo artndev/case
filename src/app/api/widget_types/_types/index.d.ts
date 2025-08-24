@@ -16,6 +16,6 @@ declare global {
 
   namespace WidgetTypes_API {
     export interface I_WidgetType
-      extends PartialKeys<Omit<I_WidgetType, 'created_at'>, 'id'> {}
+      extends PartialKeys<Omit<Widgets.I_WidgetType, 'created_at'>, 'id'> {}
   }
 }

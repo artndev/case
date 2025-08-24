@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { WidgetSizes } from './config'
+import { WidgetSizes } from '@/lib/config'
 
 export default {
   Widgets_API: {

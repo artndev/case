@@ -1,29 +1,26 @@
 declare global {
-  namespace Widgets {
-    interface I_Widget_Board
-      extends PartialKeys<I_Widget, 'user_id' | 'created_at'> {}
+  namespace N_Board {
+    interface I_Widget
+      extends Omit<Widgets.I_Widget, 'user_id' | 'created_at'> {}
+
+    type T_WidgetMixed = N_Board.I_Widget | Widgets.I_Widget
   }
 }
 
 export interface I_BoardProps extends React.ComponentProps<'div'> {
-  initialWidgets: Widgets.I_Widget_Board[]
+  initialWidgets: Widgets.I_Widget[]
   initialWidgetTypes: Widgets.I_WidgetType[]
-  // saveWidgets: (
-  //   data: T_saveWidgets_body
-  // ) => Promise<I_AxiosResponse<boolean | null>>
-  // deleteWidget: (
-  //   id: T_deleteWidget_id
-  // ) => Promise<I_AxiosResponse<boolean | null>>
+  userId: string
 }
 
 export interface I_WidgetProps extends React.ComponentProps<'div'> {
-  widget: Widgets.I_Widget_Board
+  widget: N_Board.T_WidgetMixed
   gridSize: number
-  style?: React.CSSProperties
   isDragging: boolean
+  style?: React.CSSProperties
 }
 
 export interface I_WidgetOverlayProps extends React.ComponentProps<'div'> {
-  widget: Widgets.I_Widget_Board
+  widget: N_Board.T_WidgetMixed
   gridSize: number
 }

@@ -1,4 +1,4 @@
-import { WidgetSizes } from '@/app/api/_validations/config'
+import { WidgetSizes } from '@/lib/config'
 
 declare global {
   namespace WidgetSettings {
@@ -26,14 +26,17 @@ declare global {
 
     export interface POST {
       user_id: string
-      widgets: I_Widget_API[]
+      widgets: Widgets_API.I_Widget[]
     }
 
     /* INTERFACES */
 
     export interface I_Widget
       extends PartialKeys<
-        Omit<I_Widget, 'user_id' | 'widget_type_details' | 'created_at'>,
+        Omit<
+          Widgets.I_Widget,
+          'user_id' | 'widget_type_details' | 'created_at'
+        >,
         'id' | 'widget_type_id'
       > {}
   }

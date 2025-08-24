@@ -1,7 +1,14 @@
 'use client'
 
-import { useAuthContext } from '@/app/_contexts/auth-context'
 import { Button } from '@/components/ui/button'
+import {
+  GRID_SIZE,
+  MAX_COLS,
+  MAX_ROWS,
+  sizeMap,
+  widgetTypeMap,
+} from '@/lib/config'
+import { clamp } from '@/lib/utils'
 import {
   DndContext,
   DragEndEvent,
@@ -9,56 +16,24 @@ import {
   DragOverlay,
   DragStartEvent,
 } from '@dnd-kit/core'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { I_BoardProps, I_WidgetProps } from '../_types'
+import { I_BoardProps } from '../_types'
 import { deleteWidget, saveWidgets } from '../actions'
 import WidgetOverlay from './widget-overlay'
-import Widget1 from './widgets/widget-1'
-import Widget2 from './widgets/widget-2'
-
-const GRID_SIZE = 25
-const MAX_COLS = 30
-const MAX_ROWS = 20
-
-// Map each widget size to its grid dimensions
-export const sizeMap: Record<
-  WidgetSettings.T_WidgetSize,
-  { w: number; h: number }
-> = {
-  sm: { w: 8, h: 8 },
-  md: { w: 8, h: 10 },
-  bg: { w: 8, h: 12 },
-}
-
-// Map each widget to its widget type settings
-export const widgetTypeMap: Record<
-  WidgetSettings.T_WidgetType,
-  React.FC<I_WidgetProps>
-> = {
-  'widget-1': Widget1,
-  'widget-2': Widget2,
-}
 
 /**
  * Determine if two widgets overlap on the grid
  */
 const isOverlapping = (
-  a: Widgets.I_Widget_Board,
-  b: Widgets.I_Widget_Board
+  a: N_Board.T_WidgetMixed,
+  b: N_Board.T_WidgetMixed
 ): boolean => {
   const { w: aw, h: ah } = sizeMap[a.size]
   const { w: bw, h: bh } = sizeMap[b.size]
 
   return a.x + aw > b.x && b.x + bw > a.x && a.y + ah > b.y && b.y + bh > a.y
-}
-
-/**
- * Clamp a value within a [min, max] range
- */
-const clamp = (value: number, min: number, max: number): number => {
-  return Math.max(min, Math.min(value, max))
 }
 
 /**
@@ -81,8 +56,8 @@ const clampPosition = (
  * Find first free grid spot where widget fits without overlapping
  */
 const findEmptySpot = (
-  widgets: Widgets.I_Widget_Board[],
-  widget: Widgets.I_Widget_Board
+  widgets: N_Board.T_WidgetMixed[],
+  widget: Widgets_API.I_Widget
 ): { x: number; y: number } | null => {
   const occupied: boolean[][] = Array.from({ length: MAX_ROWS }, () =>
     Array(MAX_COLS).fill(false)
@@ -128,11 +103,11 @@ const findEmptySpot = (
  * Recursively update widgets to avoid overlap when moving one
  */
 const pushWidgets = (
-  widgets: Widgets.I_Widget_Board[],
-  start: Widgets.I_Widget_Board
-): Widgets.I_Widget_Board[] | null => {
+  widgets: N_Board.T_WidgetMixed[],
+  start: N_Board.T_WidgetMixed
+): N_Board.T_WidgetMixed[] | null => {
   const updated = widgets.map(wgt => ({ ...wgt }))
-  const queue: Widgets.I_Widget_Board[] = [{ ...start }]
+  const queue: N_Board.T_WidgetMixed[] = [{ ...start }]
 
   while (queue.length) {
     const current = queue.shift()!
@@ -159,13 +134,12 @@ const pushWidgets = (
 const Board: React.FC<I_BoardProps> = ({
   initialWidgets,
   initialWidgetTypes,
+  userId,
 }) => {
-  const { user, loading } = useAuthContext()
-
   const [widgets, setWidgets] =
-    useState<Widgets.I_Widget_Board[]>(initialWidgets)
+    useState<N_Board.T_WidgetMixed[]>(initialWidgets)
   const [draggingWidgets, setDraggingWidgets] =
-    useState<Widgets.I_Widget_Board[]>(initialWidgets)
+    useState<N_Board.T_WidgetMixed[]>(initialWidgets)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   // Remember starting grid coords of dragged widget
@@ -207,7 +181,7 @@ const Board: React.FC<I_BoardProps> = ({
       original.size
     )
 
-    const start: Widgets.I_Widget_Board = { ...original, x, y }
+    const start: N_Board.T_WidgetMixed = { ...original, x, y }
     const updated = widgets.map(wgt => (wgt.id === activeId ? start : wgt))
     const pushed = pushWidgets(updated, start)
 
@@ -234,18 +208,18 @@ const Board: React.FC<I_BoardProps> = ({
 
   /* WIDGET MANIPULATIONS */
 
-  const addWidget = (
+  const addWidget = async (
     size: WidgetSettings.T_WidgetSize,
     widgetType: Widgets.I_WidgetType
   ) => {
-    const { id, ...widgetTypePayload } = widgetType
-    const widget: Widgets.I_Widget_Board = {
+    const { id, ...payload } = widgetType
+    let widget: N_Board.I_Widget = {
       id: uuidv4(),
       size,
       x: 0,
       y: 0,
       widget_type_id: id,
-      widget_type_details: widgetTypePayload,
+      widget_type_details: payload,
     }
 
     const spot = findEmptySpot(widgets, widget)
@@ -280,11 +254,14 @@ const Board: React.FC<I_BoardProps> = ({
       // Prevent widget from going outta grid borders
       const { x, y } = clampPosition(original.x, original.y, size)
 
-      const start: Widgets.I_Widget_Board = { ...original, size, x, y }
+      const start: N_Board.T_WidgetMixed = {
+        ...original,
+        size,
+        x,
+        y,
+      }
       const updated = prev.map(wgt => (wgt.id === id ? start : wgt))
       const pushed = pushWidgets(updated, start)
-
-      // if (!pushed) alert('No space available')
 
       return pushed ?? prev
     })
@@ -296,22 +273,23 @@ const Board: React.FC<I_BoardProps> = ({
       // Prevent widget from going outta grid borders
       const { x, y } = clampPosition(original.x, original.y, size)
 
-      const start: Widgets.I_Widget_Board = { ...original, size, x, y }
+      const start: N_Board.T_WidgetMixed = {
+        ...original,
+        size,
+        x,
+        y,
+      }
       const updated = prev.map(wgt => (wgt.id === id ? start : wgt))
       const pushed = pushWidgets(updated, start)
-
-      // if (!pushed) alert('No space available')
 
       return pushed ?? prev
     })
   }
 
   useEffect(() => {
-    if (loading) return
-
     const saveWidgetsHandler = async () => {
       await saveWidgets({
-        user_id: user!.id,
+        user_id: userId,
         widgets: widgets.map(({ widget_type_details, ...payload }) => payload),
       })
     }
@@ -320,111 +298,84 @@ const Board: React.FC<I_BoardProps> = ({
   }, [widgets])
 
   return (
-    <>
-      {!loading ? (
-        <div className="flex flex-col gap-6">
-          {initialWidgetTypes.map((wgtt, i) => {
+    <div className="flex flex-col gap-6">
+      {initialWidgetTypes.map((wgtt, i) => {
+        return (
+          <div key={wgtt.id} className="flex flex-col gap-3">
+            {wgtt.alias}
+            <div className="flex gap-3">
+              <Button onClick={() => addWidget('sm', wgtt)}>Add Small</Button>
+              <Button onClick={() => addWidget('md', wgtt)}>Add Medium</Button>
+              <Button onClick={() => addWidget('bg', wgtt)}>Add Large</Button>
+            </div>
+          </div>
+        )
+      })}
+
+      <DndContext
+        onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div
+          className="relative border rounded-sm bg-white"
+          style={{
+            width: GRID_SIZE * MAX_COLS,
+            height: GRID_SIZE * MAX_ROWS,
+            backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+            backgroundImage:
+              'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
+          }}
+        >
+          {draggingWidgets.map(wgt => {
+            const Widget = widgetTypeMap[wgt.widget_type_details.widget_type]
+
             return (
-              <div key={wgtt.id} className="flex flex-col gap-3">
-                {wgtt.alias}
-                <div className="flex gap-3">
-                  <Button onClick={() => addWidget('sm', wgtt)}>
-                    Add Small
-                  </Button>
-                  <Button onClick={() => addWidget('md', wgtt)}>
-                    Add Medium
-                  </Button>
-                  <Button onClick={() => addWidget('bg', wgtt)}>
-                    Add Large
+              <Widget
+                key={wgt.id}
+                widget={wgt}
+                gridSize={GRID_SIZE}
+                isDragging={wgt.id === activeId}
+                style={{
+                  visibility: wgt.id === activeId ? 'hidden' : 'visible',
+                }}
+              >
+                <div className="flex flex-wrap gap-3">
+                  {(Object.keys(sizeMap) as WidgetSettings.T_WidgetSize[]).map(
+                    (key, i) => {
+                      return (
+                        <Button
+                          key={i}
+                          variant={'ghost'}
+                          size={'icon'}
+                          onClick={() => resizeWidget(wgt.id, key)}
+                        >
+                          {key.toUpperCase()}
+                        </Button>
+                      )
+                    }
+                  )}
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    onClick={() => deleteWidgetHandler(wgt.id)}
+                  >
+                    <Trash2 />
                   </Button>
                 </div>
-              </div>
+              </Widget>
             )
           })}
 
-          <DndContext
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
-          >
-            <div
-              className="relative border rounded-sm bg-white"
-              style={{
-                width: GRID_SIZE * MAX_COLS,
-                height: GRID_SIZE * MAX_ROWS,
-                backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-                backgroundImage:
-                  'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
-              }}
-            >
-              {draggingWidgets.map(wgt => {
-                const Widget =
-                  widgetTypeMap[wgt.widget_type_details.widget_type]
-
-                return (
-                  <Widget
-                    key={wgt.id}
-                    widget={wgt}
-                    gridSize={GRID_SIZE}
-                    isDragging={wgt.id === activeId}
-                    style={{
-                      visibility: wgt.id === activeId ? 'hidden' : 'visible',
-                    }}
-                  >
-                    <div className="flex flex-wrap gap-3">
-                      {(
-                        Object.keys(sizeMap) as WidgetSettings.T_WidgetSize[]
-                      ).map((key, i) => {
-                        return (
-                          <Button
-                            key={i}
-                            variant={'ghost'}
-                            size={'icon'}
-                            onClick={() => resizeWidget(wgt.id, key)}
-                          >
-                            {key.toUpperCase()}
-                          </Button>
-                        )
-                      })}
-                      <Button
-                        variant={'ghost'}
-                        size={'icon'}
-                        onClick={() => deleteWidgetHandler(wgt.id)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </Widget>
-                )
-              })}
-
-              <DragOverlay>
-                {activeWidget && (
-                  <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
-                )}
-              </DragOverlay>
-            </div>
-          </DndContext>
-
-          {/* <Button
-            className="w-[max-content]"
-            onClick={() =>
-              saveWidgets({
-                user_id: user!.id,
-                widgets: widgets.map(
-                  ({ widget_type_details, ...payload }) => payload
-                ) as T_saveWidgets_body['widgets'],
-              })
-            }
-          >
-            Save Changes
-          </Button> */}
+          <DragOverlay>
+            {activeWidget && (
+              <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
+            )}
+          </DragOverlay>
         </div>
-      ) : (
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      )}
-    </>
+      </DndContext>
+    </div>
   )
 }
 

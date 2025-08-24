@@ -1,15 +1,15 @@
 'use client'
 
+import { sizeMap } from '@/lib/config'
 import { useDraggable } from '@dnd-kit/core'
 import React from 'react'
 import { I_WidgetProps } from '../_types'
-import { sizeMap } from './board'
 
 const Widget: React.FC<I_WidgetProps> = ({
   widget,
   gridSize,
-  style = {},
   isDragging,
+  style = {},
   children,
 }) => {
   const size = sizeMap[widget.size]
