@@ -34,7 +34,7 @@ const BoardPage = async () => {
     .catch(err => console.log(err))
 
   return (
-    <div className="flex justify-center items-center w-screen min-h-screen">
+    <div className="flex justify-center items-center w-screen min-h-screen p-[10px]">
       <Board
         initialWidgets={widgets}
         initialWidgetTypes={widgetTypes}

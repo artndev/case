@@ -1,382 +1,269 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import {
-  GRID_SIZE,
-  MAX_COLS,
-  MAX_ROWS,
-  sizeMap,
-  widgetTypeMap,
-} from '@/lib/config'
-import { clamp } from '@/lib/utils'
-import {
-  DndContext,
-  DragEndEvent,
-  DragMoveEvent,
-  DragOverlay,
-  DragStartEvent,
-} from '@dnd-kit/core'
-import { Trash2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { sizeMap } from '@/lib/config'
+import { cn } from '@/lib/utils'
+import { Smartphone, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Layout, Responsive, WidthProvider } from 'react-grid-layout'
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
 import { v4 as uuidv4 } from 'uuid'
 import { I_BoardProps } from '../_types'
-import { deleteWidget, saveWidgets } from '../actions'
-import WidgetOverlay from './widget-overlay'
 
-/**
- * Determine if two widgets overlap on the grid
- */
-const isOverlapping = (
-  a: N_Board.T_WidgetMixed,
-  b: N_Board.T_WidgetMixed
-): boolean => {
-  const { w: aw, h: ah } = sizeMap[a.size]
-  const { w: bw, h: bh } = sizeMap[b.size]
+const BREAKPOINTS = { lg: 769, md: 768 }
 
-  return a.x + aw > b.x && b.x + bw > a.x && a.y + ah > b.y && b.y + bh > a.y
-}
+const COLS = { lg: 12, md: 6 }
 
-/**
- * Ensure widget stays fully inside grid boundaries
- */
-const clampPosition = (
-  x: number,
-  y: number,
-  size: N_WidgetSettings.T_WidgetSize
-): { x: number; y: number } => {
-  const { w, h } = sizeMap[size]
+const ResponsiveGridLayout = WidthProvider(Responsive)
 
-  return {
-    x: clamp(x, 0, MAX_COLS - w),
-    y: clamp(y, 0, MAX_ROWS - h),
-  }
-}
-
-/**
- * Find first free grid spot where widget fits without overlapping
- */
-const findEmptySpot = (
-  widgets: N_Board.T_WidgetMixed[],
-  widget: N_Board.T_WidgetMixed
-): { x: number; y: number } | null => {
-  const occupied: boolean[][] = Array.from({ length: MAX_ROWS }, () =>
-    Array(MAX_COLS).fill(false)
-  )
-
-  widgets.forEach(wgt => {
-    if (wgt.id === widget.id) {
-      return
-    }
-
-    const { w, h } = sizeMap[wgt.size]
-    for (let y = wgt.y; y < wgt.y + h; y++) {
-      for (let x = wgt.x; x < wgt.x + w; x++) {
-        if (y < MAX_ROWS && x < MAX_COLS) occupied[y][x] = true
-      }
-    }
-  })
-
-  const { w, h } = sizeMap[widget.size]
-  for (let row = 0; row <= MAX_ROWS - h; row++) {
-    for (let col = 0; col <= MAX_COLS - w; col++) {
-      let isFree = true
-
-      innerLoop: for (let y = row; y < row + h; y++) {
-        for (let x = col; x < col + w; x++) {
-          if (occupied[y][x]) {
-            isFree = false
-            break innerLoop
-          }
-        }
-      }
-
-      if (isFree) {
-        return { x: col, y: row }
-      }
-    }
-  }
-
-  return null
-}
-
-/**
- * Recursively update widgets to avoid overlap when moving one
- */
-const pushWidgets = (
-  widgets: N_Board.T_WidgetMixed[],
-  start: N_Board.T_WidgetMixed
-): N_Board.T_WidgetMixed[] | null => {
-  const updated = widgets.map(wgt => ({ ...wgt }))
-  const queue: N_Board.T_WidgetMixed[] = [{ ...start }]
-
-  while (queue.length) {
-    const current = queue.shift()!
-    const collisions = updated.filter(
-      wgt => wgt.id !== current.id && isOverlapping(current, wgt)
-    )
-
-    for (const wgt of collisions) {
-      const spot = findEmptySpot(updated, wgt)
-      if (!spot) {
-        return null
-      }
-
-      wgt.x = spot.x
-      wgt.y = spot.y
-
-      queue.push({ ...wgt })
-    }
-  }
-
-  return updated
-}
-
-const Board: React.FC<I_BoardProps> = ({
+const BoardRGL: React.FC<I_BoardProps> = ({
   initialWidgets,
   initialWidgetTypes,
-  userId,
 }) => {
-  const [widgets, setWidgets] =
-    useState<N_Board.T_WidgetMixed[]>(initialWidgets)
-  const [draggingWidgets, setDraggingWidgets] =
-    useState<N_Board.T_WidgetMixed[]>(initialWidgets)
-  const [activeId, setActiveId] = useState<string | null>(null)
-
-  // Remember starting grid coords of dragged widget
-  const startPos = useRef<{ x: number; y: number } | null>(null)
-
-  const activeWidget = activeId
-    ? (draggingWidgets.find(wgt => wgt.id === activeId) ?? null)
-    : null
-
-  /* DRAG CONTEXT EVENTS */
-
-  const handleDragStart = (event: DragStartEvent) => {
-    // Set active widget
-    const id = event.active.id as string
-    setActiveId(id)
-
-    // Load saved layout
-    setDraggingWidgets(widgets)
-
-    // Initiate startPos depending on active widget
-    const widget = widgets.find(wgt => wgt.id === id)
-    startPos.current = widget ? { x: widget.x, y: widget.y } : null
-  }
-
-  const handleDragMove = (event: DragMoveEvent) => {
-    if (activeId === null || !startPos.current) return
-
-    const original = widgets.find(wgt => wgt.id === activeId)
-    if (!original) return
-
-    // Convert pixel drag to grid delta
-    const dx = Math.round(event.delta.x / GRID_SIZE)
-    const dy = Math.round(event.delta.y / GRID_SIZE)
-
-    // Prevent widget from going outta grid borders
-    const { x, y } = clampPosition(
-      startPos.current.x + dx,
-      startPos.current.y + dy,
-      original.size
-    )
-
-    const start: N_Board.T_WidgetMixed = { ...original, x, y }
-    const updated = widgets.map(wgt => (wgt.id === activeId ? start : wgt))
-    const pushed = pushWidgets(updated, start)
-
-    // Update dragging layout
-    setDraggingWidgets(pushed ?? widgets)
-  }
-
-  const handleDragEnd = (_: DragEndEvent) => {
-    if (activeId === null) {
-      return
-    }
-
-    if (JSON.stringify(widgets) !== JSON.stringify(draggingWidgets)) {
-      setWidgets(draggingWidgets) // Update saved layout
-    }
-
-    setActiveId(null)
-  }
-
-  const handleDragCancel = () => {
-    setDraggingWidgets(widgets) // Return to recent saved layout
-    setActiveId(null)
-  }
-
-  /* WIDGET MANIPULATIONS */
-
-  const addWidget = async (
-    size: N_WidgetSettings.T_WidgetSize,
-    widgetType: N_Widgets.I_WidgetType
-  ) => {
-    const { id, ...payload } = widgetType
-    let widget: N_Board.I_Widget = {
-      id: uuidv4(),
-      size,
+  const initialLayouts: { [key: string]: Layout[] } = {
+    lg: initialWidgets.map(wgt => ({
+      i: wgt.id,
       x: 0,
-      y: 0,
-      widget_type_id: id,
-      widget_type_details: payload,
-    }
+      y: Infinity,
+      w: sizeMap[wgt.size].w,
+      h: sizeMap[wgt.size].h,
+      static: false,
+    })),
+    md: initialWidgets.map(wgt => ({
+      i: wgt.id,
+      x: 0,
+      y: Infinity,
+      w: sizeMap[wgt.size].w,
+      h: sizeMap[wgt.size].h,
+      static: false,
+    })),
+  }
 
-    const spot = findEmptySpot(widgets, widget)
-    if (!spot) {
-      alert('No space available')
+  const [widgets, setWidgets] = useState<N_Board.T_WidgetMixed[] | null>(null)
+  const [layouts, setLayouts] = useState<{ [key: string]: Layout[] } | null>(
+    null
+  )
+  const [isInitialized, setIsInitialized] = useState<boolean>(false)
+  const [breakpoint, setBreakpoint] = useState<'lg' | 'md'>('lg')
+  const [previewMode, setPreviewMode] = useState<boolean>(false)
+
+  /* Layout to widgets transformation */
+  const layoutToWidgets = (
+    widgets: N_Board.T_WidgetMixed[],
+    layout: Layout[]
+  ) => {
+    return widgets.map(wgt => {
+      const layoutWidget = layout.find(lwgt => lwgt.i === wgt.id)
+      if (!layoutWidget) {
+        return wgt
+      }
+
+      const size = Object.entries(sizeMap).find(
+        ([, val]) => val.w === layoutWidget.w && val.h === layoutWidget.h
+      )?.[0] as N_WidgetSettings.T_WidgetSize
+
+      return {
+        ...wgt,
+        size: size ?? 'md',
+        x: layoutWidget.x,
+        y: layoutWidget.y,
+      }
+    })
+  }
+
+  /* Handle layout change (drag or resize) */
+  const handleLayoutChange = (layout: Layout[]) => {
+    if (!isInitialized) {
       return
     }
 
-    widget.x = spot.x
-    widget.y = spot.y
-
-    /* Update both layouts to avoid conflicts */
-
-    setWidgets(prev => [...prev, widget])
-    setDraggingWidgets(prev => [...prev, widget])
+    setWidgets(layoutToWidgets(widgets!, layout))
   }
 
+  /* Add a new widget */
+  const addWidget = (size: N_WidgetSettings.T_WidgetSize, type: any) => {
+    if (!isInitialized) {
+      return
+    }
+
+    setWidgets(prev => [
+      ...prev!,
+      {
+        id: uuidv4(),
+        size,
+        x: 0,
+        y: Infinity, // Let RGL place it automatically at first free spot
+        widget_type_id: type.id,
+        widget_type_details: type,
+      },
+    ])
+  }
+
+  /* Delete a widget */
   const deleteWidgetHandler = async (id: string) => {
-    setWidgets(prev => prev.filter(wgt => wgt.id !== id))
-    setDraggingWidgets(prev => prev.filter(wgt => wgt.id !== id))
+    if (!isInitialized) {
+      return
+    }
 
-    await deleteWidget(id)
+    setWidgets(prev => prev!.filter(wgt => wgt.id !== id))
   }
 
+  /* Resize a widget */
   const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
-    /* Update both layouts to avoid conflicts */
+    if (!isInitialized) {
+      return
+    }
 
-    setWidgets(prev => {
-      const original = prev.find(wgt => wgt.id === id)
-      if (!original) return prev
-
-      // Prevent widget from going outta grid borders
-      const { x, y } = clampPosition(original.x, original.y, size)
-
-      const start: N_Board.T_WidgetMixed = {
-        ...original,
-        size,
-        x,
-        y,
-      }
-      const updated = prev.map(wgt => (wgt.id === id ? start : wgt))
-      const pushed = pushWidgets(updated, start)
-
-      return pushed ?? prev
-    })
-
-    setDraggingWidgets(prev => {
-      const original = prev.find(wgt => wgt.id === id)
-      if (!original) return prev
-
-      // Prevent widget from going outta grid borders
-      const { x, y } = clampPosition(original.x, original.y, size)
-
-      const start: N_Board.T_WidgetMixed = {
-        ...original,
-        size,
-        x,
-        y,
-      }
-      const updated = prev.map(wgt => (wgt.id === id ? start : wgt))
-      const pushed = pushWidgets(updated, start)
-
-      return pushed ?? prev
-    })
+    setWidgets(prev =>
+      prev!.map(wgt =>
+        wgt.id === id
+          ? {
+              ...wgt,
+              size,
+            }
+          : wgt
+      )
+    )
   }
 
   useEffect(() => {
-    const saveWidgetsHandler = async () => {
-      await saveWidgets({
-        user_id: userId,
-        widgets: widgets.map(({ widget_type_details, ...payload }) => payload),
-      })
+    if (!isInitialized) {
+      return
     }
 
-    saveWidgetsHandler()
+    setLayouts(prev => ({
+      ...Object.entries(prev!).reduce(
+        (acc, [key, val]) => {
+          acc[key] = val.map(lwgt => {
+            const widget = widgets!.find(wgt => wgt.id === lwgt.i)
+            if (!widget) {
+              return lwgt
+            }
+
+            return {
+              ...lwgt,
+              w: sizeMap[widget.size].w,
+              h: sizeMap[widget.size].h,
+            }
+          })
+
+          return acc
+        },
+        {} as { [key: string]: Layout[] }
+      ),
+    }))
+  }, [widgets, breakpoint])
+
+  useEffect(() => {
+    if (!isInitialized) {
+      return
+    }
+
+    localStorage.setItem('layouts', JSON.stringify(layouts))
+  }, [layouts])
+
+  useEffect(() => {
+    if (!isInitialized) {
+      return
+    }
+
+    localStorage.setItem('widgets', JSON.stringify(widgets))
   }, [widgets])
 
+  useEffect(() => {
+    const savedLayouts = localStorage.getItem('layouts')
+    const savedWidgets = localStorage.getItem('widgets')
+
+    setLayouts(savedLayouts ? JSON.parse(savedLayouts) : initialLayouts)
+    setWidgets(savedWidgets ? JSON.parse(savedWidgets) : initialWidgets)
+    setIsInitialized(true)
+  }, [])
+
   return (
-    <div className="flex flex-col gap-6">
-      {initialWidgetTypes.map((wgtt, i) => {
-        return (
-          <div key={wgtt.id} className="flex flex-col gap-3">
-            {wgtt.alias}
+    <div className="flex flex-col gap-6 max-w-[900px] w-full">
+      <div className="flex flex-col gap-6 self-start">
+        {initialWidgetTypes.map(type => (
+          <div key={type.id} className="flex flex-col gap-3">
+            {type.alias}
             <div className="flex gap-3">
-              <Button onClick={() => addWidget('sm', wgtt)}>Add Small</Button>
-              <Button onClick={() => addWidget('md', wgtt)}>Add Medium</Button>
-              <Button onClick={() => addWidget('bg', wgtt)}>Add Large</Button>
+              <Button onClick={() => addWidget('sm', type)}>Add Small</Button>
+              <Button onClick={() => addWidget('md', type)}>Add Medium</Button>
+              <Button onClick={() => addWidget('lg', type)}>Add Large</Button>
             </div>
           </div>
-        )
-      })}
+        ))}
 
-      <DndContext
-        onDragStart={handleDragStart}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <div
-          className="relative border rounded-sm bg-white"
-          style={{
-            width: GRID_SIZE * MAX_COLS,
-            height: GRID_SIZE * MAX_ROWS,
-            backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-            backgroundImage:
-              'linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)',
-          }}
+        <Button
+          size={'icon'}
+          variant={breakpoint === 'lg' ? 'outline' : 'default'}
+          onClick={() => setPreviewMode(prev => !prev)}
+          className="hidden md:flex md:justify-center md:items-center"
         >
-          {draggingWidgets.map(wgt => {
-            const Widget = widgetTypeMap[wgt.widget_type_details.widget_type]
+          <Smartphone />
+        </Button>
+      </div>
 
+      {layouts && widgets ? (
+        <ResponsiveGridLayout
+          className={cn(
+            'layout border rounded-sm bg-white',
+            previewMode && 'w-[min(768px,_100%)]'
+          )}
+          layouts={layouts}
+          breakpoints={BREAKPOINTS}
+          cols={COLS}
+          rowHeight={10}
+          onLayoutChange={handleLayoutChange}
+          onBreakpointChange={newBreakpoint =>
+            setBreakpoint(newBreakpoint as 'lg' | 'md')
+          }
+          isResizable={false}
+          isBounded={true}
+          draggableCancel=".no-drag"
+        >
+          {widgets.map(wgt => {
             return (
-              <Widget
+              <div
                 key={wgt.id}
-                widget={wgt}
-                gridSize={GRID_SIZE}
-                isDragging={wgt.id === activeId}
-                style={{
-                  visibility: wgt.id === activeId ? 'hidden' : 'visible',
-                }}
+                className="border rounded-sm bg-gray-50 p-2 relative"
               >
-                <div className="flex flex-wrap gap-3">
-                  {(
-                    Object.keys(sizeMap) as N_WidgetSettings.T_WidgetSize[]
-                  ).map((key, i) => {
-                    return (
+                <div className="drag-handle cursor-move font-bold mb-1">
+                  {wgt.widget_type_details.alias}
+                </div>
+
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {(['sm', 'md', 'lg'] as N_WidgetSettings.T_WidgetSize[]).map(
+                    key => (
                       <Button
-                        key={i}
-                        variant={'ghost'}
-                        size={'icon'}
+                        key={key}
+                        variant="ghost"
+                        size="icon"
+                        className="no-drag"
                         onClick={() => resizeWidget(wgt.id, key)}
                       >
                         {key.toUpperCase()}
                       </Button>
                     )
-                  })}
+                  )}
                   <Button
-                    variant={'ghost'}
-                    size={'icon'}
+                    variant="ghost"
+                    size="icon"
+                    className="no-drag"
                     onClick={() => deleteWidgetHandler(wgt.id)}
                   >
                     <Trash2 />
                   </Button>
                 </div>
-              </Widget>
+              </div>
             )
           })}
-
-          <DragOverlay>
-            {activeWidget && (
-              <WidgetOverlay widget={activeWidget} gridSize={GRID_SIZE} />
-            )}
-          </DragOverlay>
-        </div>
-      </DndContext>
+        </ResponsiveGridLayout>
+      ) : (
+        'Loading...'
+      )}
     </div>
   )
 }
 
-export default Board
+export default BoardRGL

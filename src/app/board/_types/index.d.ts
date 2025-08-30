@@ -13,12 +13,7 @@ export interface I_BoardProps extends React.ComponentProps<'div'> {
   userId: string
 }
 
-export interface I_WidgetProps extends React.ComponentProps<'div'> {
-  widget: N_Board.T_WidgetMixed
-  gridSize: number
-  isDragging: boolean
-  style?: React.CSSProperties
-}
+export interface I_WidgetProps extends React.ComponentProps<'div'> {}
 
 export interface I_WidgetOverlayProps extends React.ComponentProps<'div'> {
   widget: N_Board.T_WidgetMixed
