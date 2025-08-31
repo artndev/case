@@ -1,51 +1,27 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { sizeMap } from '@/lib/config'
+import { BREAKPOINTS, COLS, SIZE_MAP } from '@/lib/config'
 import { cn } from '@/lib/utils'
 import { Smartphone, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Layout, Responsive, WidthProvider } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { v4 as uuidv4 } from 'uuid'
 import { I_BoardProps } from '../_types'
 
-const BREAKPOINTS = { lg: 769, md: 768 }
-
-const COLS = { lg: 12, md: 6 }
-
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
 const BoardRGL: React.FC<I_BoardProps> = ({
   initialWidgets,
   initialWidgetTypes,
+  initialLayouts,
 }) => {
-  const initialLayouts: { [key: string]: Layout[] } = {
-    lg: initialWidgets.map(wgt => ({
-      i: wgt.id,
-      x: 0,
-      y: Infinity,
-      w: sizeMap[wgt.size].w,
-      h: sizeMap[wgt.size].h,
-      static: false,
-    })),
-    md: initialWidgets.map(wgt => ({
-      i: wgt.id,
-      x: 0,
-      y: Infinity,
-      w: sizeMap[wgt.size].w,
-      h: sizeMap[wgt.size].h,
-      static: false,
-    })),
-  }
-
-  const [widgets, setWidgets] = useState<N_Board.T_WidgetMixed[] | null>(null)
-  const [layouts, setLayouts] = useState<{ [key: string]: Layout[] } | null>(
-    null
-  )
-  const [isInitialized, setIsInitialized] = useState<boolean>(false)
-  const [breakpoint, setBreakpoint] = useState<'lg' | 'md'>('lg')
+  const [widgets, setWidgets] =
+    useState<N_Board.T_WidgetMixed[]>(initialWidgets)
+  const [layouts, setLayouts] = useState<N_Board.T_Layouts>(initialLayouts)
+  const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
   const [previewMode, setPreviewMode] = useState<boolean>(false)
 
   /* Layout to widgets transformation */
@@ -59,171 +35,170 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         return wgt
       }
 
-      const size = Object.entries(sizeMap).find(
-        ([, val]) => val.w === layoutWidget.w && val.h === layoutWidget.h
-      )?.[0] as N_WidgetSettings.T_WidgetSize
+      const size = Object.entries(SIZE_MAP).find(
+        ([_, val]) => val.w === layoutWidget.w && val.h === layoutWidget.h
+      )![0] as N_WidgetSettings.T_WidgetSize
 
       return {
         ...wgt,
-        size: size ?? 'md',
+        size,
         x: layoutWidget.x,
         y: layoutWidget.y,
       }
     })
   }
 
-  /* Handle layout change (drag or resize) */
-  const handleLayoutChange = (layout: Layout[]) => {
-    if (!isInitialized) {
-      return
-    }
+  const layoutWidgets = useMemo(
+    () => layoutToWidgets(widgets, layouts[breakpoint]),
+    [layouts, widgets, breakpoint]
+  )
 
-    setWidgets(layoutToWidgets(widgets!, layout))
-  }
+  /* Handle layout change (drag or resize) */
+  const handleLayoutChange = (
+    _: Layout[],
+    allLayouts: ReactGridLayout.Layouts
+  ) => setLayouts(allLayouts)
 
   /* Add a new widget */
   const addWidget = (size: N_WidgetSettings.T_WidgetSize, type: any) => {
-    if (!isInitialized) {
-      return
+    const widget = {
+      id: uuidv4(),
+      size,
+      widget_type_id: type.id,
+      widget_type_details: type,
     }
 
-    setWidgets(prev => [
-      ...prev!,
-      {
-        id: uuidv4(),
-        size,
-        x: 0,
-        y: Infinity, // Let RGL place it automatically at first free spot
-        widget_type_id: type.id,
-        widget_type_details: type,
-      },
-    ])
-  }
-
-  /* Delete a widget */
-  const deleteWidgetHandler = async (id: string) => {
-    if (!isInitialized) {
-      return
-    }
-
-    setWidgets(prev => prev!.filter(wgt => wgt.id !== id))
-  }
-
-  /* Resize a widget */
-  const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
-    if (!isInitialized) {
-      return
-    }
-
-    setWidgets(prev =>
-      prev!.map(wgt =>
-        wgt.id === id
-          ? {
-              ...wgt,
-              size,
-            }
-          : wgt
-      )
-    )
-  }
-
-  useEffect(() => {
-    if (!isInitialized) {
-      return
-    }
+    setWidgets(prev => [...prev, widget])
 
     setLayouts(prev => ({
-      ...Object.entries(prev!).reduce(
+      ...Object.entries(prev).reduce(
         (acc, [key, val]) => {
-          acc[key] = val.map(lwgt => {
-            const widget = widgets!.find(wgt => wgt.id === lwgt.i)
-            if (!widget) {
-              return lwgt
-            }
-
-            return {
-              ...lwgt,
-              w: sizeMap[widget.size].w,
-              h: sizeMap[widget.size].h,
-            }
-          })
+          acc[key] = [
+            ...val,
+            {
+              i: widget.id,
+              x: 0,
+              y: Infinity,
+              w: SIZE_MAP[size].w,
+              h: SIZE_MAP[size].h,
+              static: false,
+            },
+          ]
 
           return acc
         },
         {} as { [key: string]: Layout[] }
       ),
     }))
-  }, [widgets, breakpoint])
+  }
+
+  /* Delete a widget */
+  const deleteWidgetHandler = async (id: string) => {
+    setWidgets(prev => prev.filter(wgt => wgt.id !== id))
+
+    setLayouts(prev => ({
+      ...Object.entries(prev).reduce(
+        (acc, [key, val]) => {
+          acc[key] = val.filter(lwgt => lwgt.i !== id)
+
+          return acc
+        },
+        {} as { [key: string]: Layout[] }
+      ),
+    }))
+  }
+
+  /* Resize a widget */
+  const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
+    setWidgets(prev =>
+      prev.map(wgt => (wgt.id === id ? { ...wgt, size } : wgt))
+    )
+
+    setLayouts(prev => ({
+      ...Object.entries(prev).reduce(
+        (acc, [key, val]) => {
+          acc[key] = val.map(lwgt =>
+            lwgt.i === id
+              ? { ...lwgt, w: SIZE_MAP[size].w, h: SIZE_MAP[size].h }
+              : lwgt
+          )
+
+          return acc
+        },
+        {} as { [key: string]: Layout[] }
+      ),
+    }))
+  }
 
   useEffect(() => {
-    if (!isInitialized) {
-      return
-    }
-
-    localStorage.setItem('layouts', JSON.stringify(layouts))
+    document.cookie = `layouts=${JSON.stringify(layouts)}; path=/`
   }, [layouts])
 
   useEffect(() => {
-    if (!isInitialized) {
-      return
-    }
-
-    localStorage.setItem('widgets', JSON.stringify(widgets))
+    document.cookie = `widgets=${JSON.stringify(widgets)}; path=/`
   }, [widgets])
 
-  useEffect(() => {
-    const savedLayouts = localStorage.getItem('layouts')
-    const savedWidgets = localStorage.getItem('widgets')
+  /* Testing purposes */
 
-    setLayouts(savedLayouts ? JSON.parse(savedLayouts) : initialLayouts)
-    setWidgets(savedWidgets ? JSON.parse(savedWidgets) : initialWidgets)
-    setIsInitialized(true)
-  }, [])
+  // useEffect(() => {
+  //   console.log('Preview mode: ', previewMode)
+  // }, [previewMode])
 
   return (
     <div className="flex flex-col gap-6 max-w-[900px] w-full">
+      {/* Controls */}
       <div className="flex flex-col gap-6 self-start">
-        {initialWidgetTypes.map(type => (
-          <div key={type.id} className="flex flex-col gap-3">
-            {type.alias}
-            <div className="flex gap-3">
-              <Button onClick={() => addWidget('sm', type)}>Add Small</Button>
-              <Button onClick={() => addWidget('md', type)}>Add Medium</Button>
-              <Button onClick={() => addWidget('lg', type)}>Add Large</Button>
-            </div>
-          </div>
-        ))}
+        {initialWidgetTypes.map(type => {
+          // console.log(type)
 
+          return (
+            <div key={type.id} className="flex flex-col gap-3">
+              {type.alias}
+              <div className="flex gap-3">
+                <Button onClick={() => addWidget('sm', type)}>Add Small</Button>
+                <Button onClick={() => addWidget('md', type)}>
+                  Add Medium
+                </Button>
+                <Button onClick={() => addWidget('lg', type)}>Add Large</Button>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Preview toggle */}
         <Button
           size={'icon'}
-          variant={breakpoint === 'lg' ? 'outline' : 'default'}
+          variant={previewMode ? 'default' : 'outline'}
           onClick={() => setPreviewMode(prev => !prev)}
-          className="hidden md:flex md:justify-center md:items-center"
+          className="hidden sm:flex sm:justify-center sm:items-center"
         >
           <Smartphone />
         </Button>
       </div>
 
-      {layouts && widgets ? (
-        <ResponsiveGridLayout
+      {/* RGL container */}
+
+      <div className="flex justify-center items-center w-full">
+        <div
           className={cn(
-            'layout border rounded-sm bg-white',
-            previewMode && 'w-[min(768px,_100%)]'
+            'layout w-full border rounded-sm bg-white',
+            previewMode && 'sm:w-[350px] sm:border-10'
           )}
-          layouts={layouts}
-          breakpoints={BREAKPOINTS}
-          cols={COLS}
-          rowHeight={10}
-          onLayoutChange={handleLayoutChange}
-          onBreakpointChange={newBreakpoint =>
-            setBreakpoint(newBreakpoint as 'lg' | 'md')
-          }
-          isResizable={false}
-          isBounded={true}
-          draggableCancel=".no-drag"
         >
-          {widgets.map(wgt => {
-            return (
+          <ResponsiveGridLayout
+            layouts={layouts!}
+            breakpoints={BREAKPOINTS}
+            cols={COLS}
+            rowHeight={10}
+            onLayoutChange={handleLayoutChange}
+            onBreakpointChange={newBreakpoint =>
+              setBreakpoint(newBreakpoint as 'md' | 'sm')
+            }
+            isResizable={false}
+            isBounded={true}
+            draggableCancel=".no-drag"
+          >
+            {layoutWidgets.map(wgt => (
               <div
                 key={wgt.id}
                 className="border rounded-sm bg-gray-50 p-2 relative"
@@ -231,7 +206,6 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                 <div className="drag-handle cursor-move font-bold mb-1">
                   {wgt.widget_type_details.alias}
                 </div>
-
                 <div className="flex gap-1 mt-2 flex-wrap">
                   {(['sm', 'md', 'lg'] as N_WidgetSettings.T_WidgetSize[]).map(
                     key => (
@@ -256,12 +230,10 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                   </Button>
                 </div>
               </div>
-            )
-          })}
-        </ResponsiveGridLayout>
-      ) : (
-        'Loading...'
-      )}
+            ))}
+          </ResponsiveGridLayout>
+        </div>
+      </div>
     </div>
   )
 }

@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 
 export const getWidgetTypes = async (): Promise<
-  Widgets.I_WidgetType[] | null
+  N_Widgets.I_WidgetType[] | null
 > => {
   const supabase = await createClient()
 

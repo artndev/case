@@ -1,6 +1,6 @@
+import validations from '@/app/api/_validations'
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
-import validations from '@/app/api/_validations'
 import { deleteWidget, getWidgets, saveWidgets } from './actions'
 
 export const GET = async (request: Request) => {
@@ -38,11 +38,11 @@ export const POST = async (request: Request) => {
     )
   }
 
-  let data: Widgets_API.POST
+  let data: N_Widgets_API.POST
   try {
     const body = await request.json()
 
-    data = validations.Widgets_API.POST.parse(body)
+    data = validations.Widgets_API.POST.body.parse(body)
   } catch (err) {
     console.log(err)
 

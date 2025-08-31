@@ -1,8 +1,8 @@
-import { WidgetTypes } from '@/app/api/_validations/config'
+import { WIDGET_TYPES } from '@/lib/config'
 
 declare global {
   namespace N_WidgetSettings {
-    type T_WidgetType = (typeof WidgetTypes)[number]
+    type T_WidgetType = (typeof WIDGET_TYPES)[number]
   }
 
   namespace N_Widgets {

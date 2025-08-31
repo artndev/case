@@ -2,16 +2,16 @@ import Widget1 from '@/app/board/_components/widgets/widget-1'
 import Widget2 from '@/app/board/_components/widgets/widget-2'
 import { I_WidgetProps } from '@/app/board/_types'
 
-export const WidgetTypes = ['widget-1', 'widget-2'] as const
+export const WIDGET_TYPES = ['widget-1', 'widget-2'] as const
 
-export const WidgetSizes = ['sm', 'md', 'lg'] as const
+export const WIDGET_SIZES = ['sm', 'md', 'lg'] as const
 
-export const GRID_SIZE = 80
-export const MAX_COLS = 25
-export const MAX_ROWS = 20
+export const BREAKPOINTS = { md: 769, sm: 768 }
+
+export const COLS = { md: 12, sm: 6 }
 
 // Map each widget size to its grid dimensions
-export const sizeMap: Record<
+export const SIZE_MAP: Record<
   N_WidgetSettings.T_WidgetSize,
   { w: number; h: number }
 > = {
@@ -21,7 +21,7 @@ export const sizeMap: Record<
 }
 
 // Map each widget to its widget type settings
-export const widgetTypeMap: Record<
+export const WIDGET_TYPE_MAP: Record<
   N_WidgetSettings.T_WidgetType,
   React.FC<I_WidgetProps>
 > = {
