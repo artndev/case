@@ -30,7 +30,7 @@ declare global {
           N_Widgets.I_Widget,
           'user_id' | 'widget_type_details' | 'created_at'
         >,
-        'id' | 'widget_type_id'
+        'id' | 'widget_type_id' | 'x' | 'y'
       > {}
 
     /* REQUEST METHODS */

@@ -38,11 +38,24 @@ export const POST = async (request: Request) => {
     )
   }
 
-  let data: N_Widgets_API.POST
+  const { searchParams } = new URL(request.url)
+
+  const breakpoint = searchParams.get('breakpoint')
+  if (!breakpoint) {
+    return NextResponse.json(
+      { message: 'Breakpoint is not provided', answer: null },
+      { status: 400 }
+    )
+  }
+
+  let validBody: N_Widgets_API.POST
+  let validBreakpoint: N_Board.T_Breakpoint
   try {
     const body = await request.json()
 
-    data = validations.Widgets_API.POST.body.parse(body)
+    validBody = validations.Widgets_API.POST.body.parse(body)
+    validBreakpoint =
+      validations.Widgets_API.POST.params.breakpoint.parse(breakpoint)
   } catch (err) {
     console.log(err)
 
@@ -59,7 +72,11 @@ export const POST = async (request: Request) => {
     )
   }
 
-  const res = await saveWidgets(data.user_id, data.widgets)
+  const res = await saveWidgets(
+    validBody.user_id,
+    validBreakpoint,
+    validBody.widgets
+  )
   if (!res) {
     return NextResponse.json(
       { message: 'Server is not responding', answer: null },
@@ -95,9 +112,9 @@ export const DELETE = async (request: Request) => {
     )
   }
 
-  let data: string
+  let validID: string
   try {
-    data = validations.Widgets_API.DELETE.params.id.parse(id)
+    validID = validations.Widgets_API.DELETE.params.id.parse(id)
   } catch (err) {
     console.log(err)
 
@@ -114,7 +131,7 @@ export const DELETE = async (request: Request) => {
     )
   }
 
-  const res = await deleteWidget(data)
+  const res = await deleteWidget(validID)
   if (!res) {
     return NextResponse.json(
       { message: 'Server is not responding', answer: null },

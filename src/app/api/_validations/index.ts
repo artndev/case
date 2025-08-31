@@ -1,4 +1,4 @@
-import { WIDGET_SIZES } from '@/lib/config'
+import { BREAKPOINTS, WIDGET_SIZES } from '@/lib/config'
 import { z } from 'zod'
 
 export default {
@@ -26,6 +26,11 @@ export default {
           )
           .nonempty("'widgets' cannot be empty"),
       }),
+      params: {
+        breakpoint: z.enum(BREAKPOINTS, {
+          message: `Cannot found 'breakpoint' in suggested values: ${BREAKPOINTS.join(', ')}`,
+        }),
+      },
     },
     DELETE: {
       params: {

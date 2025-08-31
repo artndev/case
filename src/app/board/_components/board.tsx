@@ -1,28 +1,62 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { BREAKPOINTS, COLS, SIZE_MAP } from '@/lib/config'
+import { BREAKPOINT_MAP, BREAKPOINTS, COL_MAP, SIZE_MAP } from '@/lib/config'
 import { cn } from '@/lib/utils'
 import { Smartphone, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Layout, Responsive, WidthProvider } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
-import { v4 as uuidv4 } from 'uuid'
 import { I_BoardProps } from '../_types'
+import { saveWidgets } from '../actions'
+import { v4 as uuidv4 } from 'uuid'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
 const BoardRGL: React.FC<I_BoardProps> = ({
+  userId,
   initialWidgets,
   initialWidgetTypes,
   initialLayouts,
 }) => {
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null)
+  const dirtyWidgets = useRef<Set<string>>(new Set())
+  const prevPositions = useRef<Record<string, { x: number; y: number }>>({})
+
   const [widgets, setWidgets] =
     useState<N_Board.T_WidgetMixed[]>(initialWidgets)
   const [layouts, setLayouts] = useState<N_Board.T_Layouts>(initialLayouts)
   const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
   const [previewMode, setPreviewMode] = useState<boolean>(false)
+
+  // const selectiveSaveWidgets = async (
+  //   widgets: N_Widgets_API.I_Widget[],
+  //   breakpoint: N_Board.T_Breakpoint
+  // ) => {
+  //   BREAKPOINTS.forEach(async val => {
+  //     if (val === breakpoint) {
+  //       await saveWidgets(
+  //         {
+  //           user_id: userId,
+  //           widgets,
+  //         },
+  //         breakpoint
+  //       )
+  //       return
+  //     }
+
+  //     await saveWidgets(
+  //       {
+  //         user_id: userId,
+  //         widgets: widgets.map(
+  //           ({ x, y, widget_type_id, ...payload }) => payload
+  //         ),
+  //       },
+  //       breakpoint
+  //     )
+  //   })
+  // }
 
   /* Layout to widgets transformation */
   const layoutToWidgets = (
@@ -37,11 +71,11 @@ const BoardRGL: React.FC<I_BoardProps> = ({
 
       const size = Object.entries(SIZE_MAP).find(
         ([_, val]) => val.w === layoutWidget.w && val.h === layoutWidget.h
-      )![0] as N_WidgetSettings.T_WidgetSize
+      )?.[0] as N_WidgetSettings.T_WidgetSize
 
       return {
         ...wgt,
-        size,
+        size: size ?? 'md',
         x: layoutWidget.x,
         y: layoutWidget.y,
       }
@@ -53,19 +87,71 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     [layouts, widgets, breakpoint]
   )
 
+  /* Just take layoutWidgets and save to db. THEY HAVE ALREADY BEEN FORMATTED! */
+  /* Perform deletion of widgets and save it to db. DELETE IN ALL 'breakpoint' TABLES! */
+
+  // useEffect(() => {
+  //   if (saveTimeout.current) {
+  //     clearTimeout(saveTimeout.current)
+  //   }
+
+  //   saveTimeout.current = setTimeout(() => {
+  //     // selectiveSaveWidgets(
+  //     //   layoutWidgets.filter(wgt => !wgt.isSaved),
+  //     //   breakpoint
+  //     // )
+
+  //     dirtyWidgets.current.clear()
+  //   }, 500)
+  // }, [layouts, widgets, breakpoint])
+
+  const handleDragStart = (layout: Layout[]) => {
+    prevPositions.current = layout.reduce(
+      (acc, lwgt) => {
+        acc[lwgt.i] = {
+          x: lwgt.x,
+          y: lwgt.y,
+        }
+
+        return acc
+      },
+      {} as Record<string, { x: number; y: number }>
+    )
+  }
+
+  const handleDragStop = (layout: Layout[]) => {
+    dirtyWidgets.current = new Set([
+      ...dirtyWidgets.current,
+      ...layout
+        .filter(lwgt => {
+          const pos = prevPositions.current[lwgt.i]
+
+          return pos && (pos.x !== lwgt.x || pos.y !== lwgt.y)
+        })
+        .map(lwgt => lwgt.i),
+    ])
+
+    setLayouts({
+      ...layouts,
+      [breakpoint]: layout,
+    })
+  }
+
   /* Handle layout change (drag or resize) */
-  const handleLayoutChange = (
-    _: Layout[],
-    allLayouts: ReactGridLayout.Layouts
-  ) => setLayouts(allLayouts)
+  const handleLayoutChange = (_: any, allLayouts: ReactGridLayout.Layouts) =>
+    setLayouts(allLayouts)
 
   /* Add a new widget */
-  const addWidget = (size: N_WidgetSettings.T_WidgetSize, type: any) => {
+  const addWidget = (
+    size: N_WidgetSettings.T_WidgetSize,
+    type: N_Widgets.I_WidgetType
+  ) => {
+    const { id, created_at, ...payload } = type
     const widget = {
       id: uuidv4(),
       size,
       widget_type_id: type.id,
-      widget_type_details: type,
+      widget_type_details: payload,
     }
 
     setWidgets(prev => [...prev, widget])
@@ -90,10 +176,12 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         {} as { [key: string]: Layout[] }
       ),
     }))
+
+    dirtyWidgets.current.add(widget.id)
   }
 
   /* Delete a widget */
-  const deleteWidgetHandler = async (id: string) => {
+  const handleWidgetDelete = async (id: string) => {
     setWidgets(prev => prev.filter(wgt => wgt.id !== id))
 
     setLayouts(prev => ({
@@ -111,7 +199,15 @@ const BoardRGL: React.FC<I_BoardProps> = ({
   /* Resize a widget */
   const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
     setWidgets(prev =>
-      prev.map(wgt => (wgt.id === id ? { ...wgt, size } : wgt))
+      prev.map(wgt =>
+        wgt.id === id
+          ? {
+              ...wgt,
+              size,
+              isSaved: false,
+            }
+          : wgt
+      )
     )
 
     setLayouts(prev => ({
@@ -128,6 +224,8 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         {} as { [key: string]: Layout[] }
       ),
     }))
+
+    dirtyWidgets.current.add(id)
   }
 
   useEffect(() => {
@@ -187,8 +285,8 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         >
           <ResponsiveGridLayout
             layouts={layouts!}
-            breakpoints={BREAKPOINTS}
-            cols={COLS}
+            breakpoints={BREAKPOINT_MAP}
+            cols={COL_MAP}
             rowHeight={10}
             onLayoutChange={handleLayoutChange}
             onBreakpointChange={newBreakpoint =>
@@ -197,18 +295,24 @@ const BoardRGL: React.FC<I_BoardProps> = ({
             isResizable={false}
             isBounded={true}
             draggableCancel=".no-drag"
+            onDragStop={handleDragStop}
+            onDragStart={handleDragStart}
           >
-            {layoutWidgets.map(wgt => (
-              <div
-                key={wgt.id}
-                className="border rounded-sm bg-gray-50 p-2 relative"
-              >
-                <div className="drag-handle cursor-move font-bold mb-1">
-                  {wgt.widget_type_details.alias}
-                </div>
-                <div className="flex gap-1 mt-2 flex-wrap">
-                  {(['sm', 'md', 'lg'] as N_WidgetSettings.T_WidgetSize[]).map(
-                    key => (
+            {layoutWidgets.map(wgt => {
+              console.log(layoutWidgets)
+
+              return (
+                <div
+                  key={wgt.id}
+                  className="border rounded-sm bg-gray-50 p-2 relative"
+                >
+                  <div className="drag-handle cursor-move font-bold mb-1">
+                    {wgt.widget_type_details.alias}
+                  </div>
+                  <div className="flex gap-1 mt-2 flex-wrap">
+                    {(
+                      ['sm', 'md', 'lg'] as N_WidgetSettings.T_WidgetSize[]
+                    ).map(key => (
                       <Button
                         key={key}
                         variant="ghost"
@@ -218,19 +322,19 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                       >
                         {key.toUpperCase()}
                       </Button>
-                    )
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="no-drag"
-                    onClick={() => deleteWidgetHandler(wgt.id)}
-                  >
-                    <Trash2 />
-                  </Button>
+                    ))}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="no-drag"
+                      onClick={() => handleWidgetDelete(wgt.id)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </ResponsiveGridLayout>
         </div>
       </div>

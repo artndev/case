@@ -42,19 +42,20 @@ const BoardPage = async () => {
     redirect('/error')
   }
 
+  /* Make default x - 0 and y - Infinity in db */
   const layouts: N_Board.T_Layouts = {
     md: widgets.map(wgt => ({
       i: wgt.id,
-      x: 0,
-      y: Infinity,
+      x: wgt.x,
+      y: wgt.y,
       w: SIZE_MAP[wgt.size].w,
       h: SIZE_MAP[wgt.size].h,
       static: false,
     })),
     sm: widgets.map(wgt => ({
       i: wgt.id,
-      x: 0,
-      y: Infinity,
+      x: wgt.x,
+      y: wgt.y,
       w: SIZE_MAP[wgt.size].w,
       h: SIZE_MAP[wgt.size].h,
       static: false,

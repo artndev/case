@@ -5,13 +5,58 @@ import { v4 as uuidv4 } from 'uuid'
 
 export const saveWidgets = async (
   userId: string,
+  breakpoint: N_Board.T_Breakpoint,
   widgets: N_Widgets_API.I_Widget[]
 ): Promise<boolean | null> => {
   const supabase = await createClient()
 
   // If row exist, provided id will be overlapped
   const { error } = await supabase
-    .from('widgets')
+    .from(`widgets_${breakpoint}_breakpoint`)
+    .upsert([
+      ...widgets.map(wgt => ({ id: uuidv4(), user_id: userId, ...wgt })),
+    ])
+
+  if (error) {
+    console.log('Error has occurred while saving widgets', error)
+    return null
+  }
+
+  console.log('Widgets have been saved successfully')
+  return true
+}
+
+export const saveWidgets_md = async (
+  userId: string,
+  widgets: N_Widgets_API.I_Widget[]
+): Promise<boolean | null> => {
+  const supabase = await createClient()
+
+  // If row exist, provided id will be overlapped
+  const { error } = await supabase
+    .from('widgets_md_breakpoint')
+    .upsert([
+      ...widgets.map(wgt => ({ id: uuidv4(), user_id: userId, ...wgt })),
+    ])
+
+  if (error) {
+    console.log('Error has occurred while saving widgets', error)
+    return null
+  }
+
+  console.log('Widgets have been saved successfully')
+  return true
+}
+
+export const saveWidgets_sm = async (
+  userId: string,
+  widgets: N_Widgets_API.I_Widget[]
+): Promise<boolean | null> => {
+  const supabase = await createClient()
+
+  // If row exist, provided id will be overlapped
+  const { error } = await supabase
+    .from('widgets_sm_breakpoint')
     .upsert([
       ...widgets.map(wgt => ({ id: uuidv4(), user_id: userId, ...wgt })),
     ])
