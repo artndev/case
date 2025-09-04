@@ -4,8 +4,7 @@ import axios from '@/lib/axios-server'
 import { cookies } from 'next/headers'
 
 export const saveWidgets = async (
-  data: N_Widgets_API.POST,
-  breakpoint: N_Board.T_Breakpoint
+  data: N_Widgets_API.POST
 ): Promise<boolean | null> => {
   const cookieStore = await cookies()
 
@@ -13,9 +12,6 @@ export const saveWidgets = async (
     .post('/api/widgets', data, {
       headers: {
         Cookie: cookieStore.toString(),
-      },
-      params: {
-        breakpoint,
       },
     })
     .then(res => res.data.answer)

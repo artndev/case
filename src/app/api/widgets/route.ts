@@ -38,24 +38,11 @@ export const POST = async (request: Request) => {
     )
   }
 
-  const { searchParams } = new URL(request.url)
-
-  const breakpoint = searchParams.get('breakpoint')
-  if (!breakpoint) {
-    return NextResponse.json(
-      { message: 'Breakpoint is not provided', answer: null },
-      { status: 400 }
-    )
-  }
-
   let validBody: N_Widgets_API.POST
-  let validBreakpoint: N_Board.T_Breakpoint
   try {
     const body = await request.json()
 
     validBody = validations.Widgets_API.POST.body.parse(body)
-    validBreakpoint =
-      validations.Widgets_API.POST.params.breakpoint.parse(breakpoint)
   } catch (err) {
     console.log(err)
 
@@ -72,11 +59,7 @@ export const POST = async (request: Request) => {
     )
   }
 
-  const res = await saveWidgets(
-    validBody.user_id,
-    validBreakpoint,
-    validBody.widgets
-  )
+  const res = await saveWidgets(validBody.user_id, validBody.widgets)
   if (!res) {
     return NextResponse.json(
       { message: 'Server is not responding', answer: null },

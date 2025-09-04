@@ -1,20 +1,18 @@
+import { Layout } from 'react-grid-layout'
+
 declare global {
   namespace N_Board {
-    // Omit x and y for RGL
+    // All keys can be omitted but Ill make them optional
     interface I_Widget
-      extends Omit<N_Widgets.I_Widget, 'user_id' | 'created_at' | 'x' | 'y'> {}
-
-    type T_WidgetMixed = N_Board.I_Widget | N_Widgets.I_Widget
+      extends PartialKeys<N_Widgets.I_Widget, 'user_id' | 'created_at'> {}
 
     type T_Breakpoint = 'md' | 'sm'
-
-    type T_Layouts = { [key: string]: Layout[] }
   }
 }
 
 export interface I_BoardProps extends React.ComponentProps<'div'> {
   userId: string
-  initialWidgets: N_Widgets.I_Widget[]
+  initialWidgets: N_Board.I_Widget[]
   initialWidgetTypes: N_Widgets.I_WidgetType[]
   initialLayouts: N_Board.T_Layouts
 }

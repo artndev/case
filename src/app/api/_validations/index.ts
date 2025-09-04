@@ -17,8 +17,16 @@ export default {
                 .string()
                 .uuid("'widget_type_id' must be in UUID format")
                 .optional(),
-              x: z.number().nonnegative("'x' cannot be below zero"),
-              y: z.number().nonnegative("'y' cannot be below zero"),
+              x_sm: z.number().nonnegative("'x_sm' cannot be below zero"),
+              y_sm: z
+                .number()
+                .nonnegative("'y_sm' cannot be below zero")
+                .nullable(), // NULL for Infinity
+              x_md: z.number().nonnegative("'x_md' cannot be below zero"),
+              y_md: z
+                .number()
+                .nonnegative("'y_md' cannot be below zero")
+                .nullable(), // NULL for Infinity
               size: z.enum(WIDGET_SIZES, {
                 message: `Cannot found 'size' in suggested values: ${WIDGET_SIZES.join(', ')}`,
               }),
@@ -26,11 +34,11 @@ export default {
           )
           .nonempty("'widgets' cannot be empty"),
       }),
-      params: {
-        breakpoint: z.enum(BREAKPOINTS, {
-          message: `Cannot found 'breakpoint' in suggested values: ${BREAKPOINTS.join(', ')}`,
-        }),
-      },
+      // params: {
+      //   breakpoint: z.enum(BREAKPOINTS, {
+      //     message: `Cannot found 'breakpoint' in suggested values: ${BREAKPOINTS.join(', ')}`,
+      //   }),
+      // },
     },
     DELETE: {
       params: {

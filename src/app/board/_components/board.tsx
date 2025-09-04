@@ -1,16 +1,16 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { BREAKPOINT_MAP, BREAKPOINTS, COL_MAP, SIZE_MAP } from '@/lib/config'
+import { BREAKPOINT_MAP, COL_MAP, SIZE_MAP } from '@/lib/config'
 import { cn } from '@/lib/utils'
 import { Smartphone, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Layout, Responsive, WidthProvider } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
-import { I_BoardProps } from '../_types'
-import { saveWidgets } from '../actions'
 import { v4 as uuidv4 } from 'uuid'
+import { I_BoardProps } from '../_types'
+import { deleteWidget, saveWidgets } from '../actions'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
@@ -21,112 +21,160 @@ const BoardRGL: React.FC<I_BoardProps> = ({
   initialLayouts,
 }) => {
   const saveTimeout = useRef<NodeJS.Timeout | null>(null)
-  const dirtyWidgets = useRef<Set<string>>(new Set())
-  const prevPositions = useRef<Record<string, { x: number; y: number }>>({})
+  const addTimeout = useRef<NodeJS.Timeout | null>(null)
+  const deleteTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  const [widgets, setWidgets] =
-    useState<N_Board.T_WidgetMixed[]>(initialWidgets)
-  const [layouts, setLayouts] = useState<N_Board.T_Layouts>(initialLayouts)
+  const dirtyWidgets = useRef<Set<string>>(new Set())
+  const prevLayoutMeta = useRef<
+    Record<
+      string,
+      Record<
+        string,
+        {
+          x: number
+          y: number
+          size: N_WidgetSettings.T_WidgetSize
+        }
+      >
+    >
+  >({})
+
+  const [widgets, setWidgets] = useState<N_Board.I_Widget[]>(initialWidgets)
+  const [layouts, setLayouts] =
+    useState<Record<string, Layout[]>>(initialLayouts)
   const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
   const [previewMode, setPreviewMode] = useState<boolean>(false)
 
-  // const selectiveSaveWidgets = async (
-  //   widgets: N_Widgets_API.I_Widget[],
-  //   breakpoint: N_Board.T_Breakpoint
-  // ) => {
-  //   BREAKPOINTS.forEach(async val => {
-  //     if (val === breakpoint) {
-  //       await saveWidgets(
-  //         {
-  //           user_id: userId,
-  //           widgets,
-  //         },
-  //         breakpoint
-  //       )
-  //       return
-  //     }
+  const getLayoutsMeta = () => {
+    return Object.entries(layouts).reduce(
+      (acc, [key, val]) => {
+        val.forEach(lwgt => {
+          const size = Object.entries(SIZE_MAP).find(
+            ([_, size]) => size.w === lwgt.w && size.h === lwgt.h
+          )?.[0] as N_WidgetSettings.T_WidgetSize | undefined
 
-  //     await saveWidgets(
-  //       {
-  //         user_id: userId,
-  //         widgets: widgets.map(
-  //           ({ x, y, widget_type_id, ...payload }) => payload
-  //         ),
-  //       },
-  //       breakpoint
-  //     )
-  //   })
-  // }
+          acc[lwgt.i] = {
+            ...acc[lwgt.i],
+            [key]: {
+              x: lwgt.x,
+              y: lwgt.y,
+              size: size ?? 'md',
+            },
+          }
+        })
+
+        return acc
+      },
+      {} as Record<
+        string,
+        Record<
+          string,
+          {
+            x: number
+            y: number
+            size: N_WidgetSettings.T_WidgetSize
+          }
+        >
+      >
+    )
+  }
 
   /* Layout to widgets transformation */
-  const layoutToWidgets = (
-    widgets: N_Board.T_WidgetMixed[],
-    layout: Layout[]
-  ) => {
+  const layoutToWidgets = () => {
     return widgets.map(wgt => {
-      const layoutWidget = layout.find(lwgt => lwgt.i === wgt.id)
-      if (!layoutWidget) {
-        return wgt
-      }
-
-      const size = Object.entries(SIZE_MAP).find(
-        ([_, val]) => val.w === layoutWidget.w && val.h === layoutWidget.h
-      )?.[0] as N_WidgetSettings.T_WidgetSize
+      const layoutWidgetMeta = layoutsMeta[wgt.id][breakpoint]
 
       return {
         ...wgt,
-        size: size ?? 'md',
-        x: layoutWidget.x,
-        y: layoutWidget.y,
+        size: layoutWidgetMeta.size,
       }
     })
   }
 
+  const layoutsToWidgetsAPI = () => {
+    /* The same size for each breakpoint but different alignment */
+    return widgets
+      .filter(({ id }) => dirtyWidgets.current.has(id))
+      .map(({ widget_type_details, ...payload }) => ({
+        ...payload,
+        ...Object.entries(layoutsMeta[payload.id]).reduce(
+          (acc, [key, val]) => {
+            acc[`x_${key}`] = val.x
+            acc[`y_${key}`] = val.y
+
+            return acc
+          },
+          {} as Record<string, number>
+        ),
+      }))
+  }
+
+  const layoutsMeta = useMemo(() => getLayoutsMeta(), [layouts])
+
   const layoutWidgets = useMemo(
-    () => layoutToWidgets(widgets, layouts[breakpoint]),
+    () => layoutToWidgets(),
     [layouts, widgets, breakpoint]
   )
 
-  /* Just take layoutWidgets and save to db. THEY HAVE ALREADY BEEN FORMATTED! */
-  /* Perform deletion of widgets and save it to db. DELETE IN ALL 'breakpoint' TABLES! */
+  const layoutWidgetsAPI = useMemo(
+    () => layoutsToWidgetsAPI(),
+    [layouts, widgets]
+  )
 
-  // useEffect(() => {
-  //   if (saveTimeout.current) {
-  //     clearTimeout(saveTimeout.current)
-  //   }
+  useEffect(() => {
+    if (dirtyWidgets.current.size === 0) {
+      return
+    }
 
-  //   saveTimeout.current = setTimeout(() => {
-  //     // selectiveSaveWidgets(
-  //     //   layoutWidgets.filter(wgt => !wgt.isSaved),
-  //     //   breakpoint
-  //     // )
+    if (saveTimeout.current) {
+      clearTimeout(saveTimeout.current)
+    }
 
-  //     dirtyWidgets.current.clear()
-  //   }, 500)
-  // }, [layouts, widgets, breakpoint])
+    saveTimeout.current = setTimeout(() => {
+      const dirtyPayload = layoutWidgetsAPI.filter(w =>
+        dirtyWidgets.current.has(w.id)
+      )
 
-  const handleDragStart = (layout: Layout[]) => {
-    prevPositions.current = layout.reduce(
-      (acc, lwgt) => {
-        acc[lwgt.i] = {
-          x: lwgt.x,
-          y: lwgt.y,
-        }
+      if (dirtyPayload.length === 0) {
+        return
+      }
 
-        return acc
-      },
-      {} as Record<string, { x: number; y: number }>
-    )
-  }
+      console.log(
+        dirtyPayload.map(({ user_id, created_at, ...payload }) => payload)
+      )
+
+      saveWidgets({
+        user_id: userId,
+        widgets: dirtyPayload.map(
+          ({ user_id, created_at, ...payload }) => payload
+        ),
+      })
+        .then(() => {
+          console.log('Saved: ', dirtyPayload)
+
+          dirtyWidgets.current.clear()
+        })
+        .catch(err => console.log(err))
+
+      dirtyWidgets.current.clear()
+    }, 500)
+  }, [layouts, widgets, breakpoint])
+
+  const handleDragStart = (_: any) => (prevLayoutMeta.current = layoutsMeta)
 
   const handleDragStop = (layout: Layout[]) => {
     dirtyWidgets.current = new Set([
       ...dirtyWidgets.current,
       ...layout
         .filter(lwgt => {
-          const pos = prevPositions.current[lwgt.i]
+          const prevLayoutWidgetMeta =
+            prevLayoutMeta.current[lwgt.i]?.[breakpoint]
 
-          return pos && (pos.x !== lwgt.x || pos.y !== lwgt.y)
+          return (
+            prevLayoutWidgetMeta &&
+            (prevLayoutWidgetMeta.x !== lwgt.x ||
+              prevLayoutWidgetMeta.y !== lwgt.y)
+          )
         })
         .map(lwgt => lwgt.i),
     ])
@@ -141,7 +189,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
   const handleLayoutChange = (_: any, allLayouts: ReactGridLayout.Layouts) =>
     setLayouts(allLayouts)
 
-  /* Add a new widget */
+  /* Add new widget */
   const addWidget = (
     size: N_WidgetSettings.T_WidgetSize,
     type: N_Widgets.I_WidgetType
@@ -149,6 +197,10 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     const { id, created_at, ...payload } = type
     const widget = {
       id: uuidv4(),
+      x_sm: 0,
+      y_sm: Infinity,
+      x_md: 0,
+      y_md: Infinity,
       size,
       widget_type_id: type.id,
       widget_type_details: payload,
@@ -173,27 +225,42 @@ const BoardRGL: React.FC<I_BoardProps> = ({
 
           return acc
         },
-        {} as { [key: string]: Layout[] }
+        {} as Record<string, Layout[]>
       ),
     }))
 
     dirtyWidgets.current.add(widget.id)
   }
 
-  /* Delete a widget */
+  /* Delete widget */
   const handleWidgetDelete = async (id: string) => {
-    setWidgets(prev => prev.filter(wgt => wgt.id !== id))
+    if (deleteTimeout.current) {
+      clearTimeout(deleteTimeout.current)
+    }
 
-    setLayouts(prev => ({
-      ...Object.entries(prev).reduce(
-        (acc, [key, val]) => {
-          acc[key] = val.filter(lwgt => lwgt.i !== id)
+    const start = () => {
+      setWidgets(prev => prev.filter(wgt => wgt.id !== id))
 
-          return acc
-        },
-        {} as { [key: string]: Layout[] }
-      ),
-    }))
+      setLayouts(prev => ({
+        ...Object.entries(prev).reduce(
+          (acc, [key, val]) => {
+            acc[key] = val.filter(lwgt => lwgt.i !== id)
+
+            return acc
+          },
+          {} as Record<string, Layout[]>
+        ),
+      }))
+
+      /* Consider to add only widget with provided id */
+      widgets.map(({ id }) => id).forEach(id => dirtyWidgets.current.add(id))
+    }
+
+    deleteTimeout.current = setTimeout(() => {
+      deleteWidget(id)
+        .then(() => start())
+        .catch(err => console.log(err))
+    }, 500)
   }
 
   /* Resize a widget */
@@ -204,7 +271,6 @@ const BoardRGL: React.FC<I_BoardProps> = ({
           ? {
               ...wgt,
               size,
-              isSaved: false,
             }
           : wgt
       )
@@ -221,7 +287,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
 
           return acc
         },
-        {} as { [key: string]: Layout[] }
+        {} as Record<string, Layout[]>
       ),
     }))
 
@@ -290,7 +356,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
             rowHeight={10}
             onLayoutChange={handleLayoutChange}
             onBreakpointChange={newBreakpoint =>
-              setBreakpoint(newBreakpoint as 'md' | 'sm')
+              setBreakpoint(newBreakpoint as N_Board.T_Breakpoint)
             }
             isResizable={false}
             isBounded={true}
@@ -299,7 +365,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
             onDragStart={handleDragStart}
           >
             {layoutWidgets.map(wgt => {
-              console.log(layoutWidgets)
+              // console.log(layoutWidgets)
 
               return (
                 <div

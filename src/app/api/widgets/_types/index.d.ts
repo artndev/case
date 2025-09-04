@@ -1,16 +1,18 @@
-import { WidgetSizes } from '@/lib/config'
+import { WIDGET_SIZES } from '@/lib/config'
 
 declare global {
   namespace N_WidgetSettings {
-    type T_WidgetSize = (typeof WidgetSizes)[number]
+    type T_WidgetSize = (typeof WIDGET_SIZES)[number]
   }
 
   namespace N_Widgets {
     export interface I_Widget {
       id: string
       user_id: string
-      x: number
-      y: number
+      x_md: number
+      y_md: number | null
+      x_sm: number
+      y_sm: number | null
       size: N_WidgetSettings.T_WidgetSize
       widget_type_id: string
       widget_type_details: {
@@ -30,7 +32,7 @@ declare global {
           N_Widgets.I_Widget,
           'user_id' | 'widget_type_details' | 'created_at'
         >,
-        'id' | 'widget_type_id' | 'x' | 'y'
+        'id' | 'widget_type_id'
       > {}
 
     /* REQUEST METHODS */
