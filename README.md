@@ -1,5 +1,13 @@
 > The dev-public branch is temporally unavailable until the demo is released!
 
+<p align="middle">
+    <img src="./assets/briefcase.png" width=200 />
+</p>
+
+<h3 align="middle">
+    Case
+</h3>
+
 ## Quick Overview
 
 The bento grid system based on [react-grid-layout (RGL)](https://github.com/react-grid-layout/react-grid-layout) and the communication between widgets:
