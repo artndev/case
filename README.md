@@ -1,3 +1,5 @@
+> The dev-public branch is temporally unavailable until the demo is released!
+
 ## Quick Overview
 
 The bento grid system based on [react-grid-layout (RGL)](https://github.com/react-grid-layout/react-grid-layout) and the communication between widgets:
@@ -6,6 +8,8 @@ The bento grid system based on [react-grid-layout (RGL)](https://github.com/reac
 - Widgets have different sizes that can be changed in real time.
 - Widgets have a fluid and responsible layout that is monitoring cords of each widget on the board every second.
 - Own styles and more is coming!
+
+Also Supabase Auth is included with Google OAuth integrated to make the system one step further to SAAS.
 
 ## Tech Stack
 
