@@ -12,7 +12,9 @@ export const BREAKPOINT_MAP = { sm: 768, md: 769 } as const
 
 export const COL_MAP = { sm: 6, md: 12 } as const
 
-// Map each widget size to its grid dimensions
+/**
+ * Map each widget size to its grid dimensions
+ */
 export const SIZE_MAP: Record<
   N_WidgetSettings.T_WidgetSize,
   { w: number; h: number }
@@ -22,7 +24,9 @@ export const SIZE_MAP: Record<
   lg: { w: 6, h: 14 },
 } as const
 
-// Map each widget to its widget type settings
+/**
+ * Map each widget type to its component
+ */
 export const WIDGET_TYPE_MAP: Record<
   N_WidgetSettings.T_WidgetType,
   React.FC<I_WidgetProps>

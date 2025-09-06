@@ -1,7 +1,57 @@
-import { BREAKPOINTS, WIDGET_SIZES } from '@/lib/config'
 import { z } from 'zod'
+import { WIDGET_SIZES } from './config'
+import * as regexes from './regexes'
 
+/**
+ * Validation schemas for everything
+ */
 export default {
+  SignInForm: {
+    POST: {
+      body: z.object({
+        email: z.string().nonempty().email(),
+        password: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
+      }),
+    },
+  },
+  SignUpForm: {
+    POST: {
+      body: z
+        .object({
+          email: z.string().nonempty().email(),
+          password: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
+          confirmPassword: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
+        })
+        .refine(
+          ({ password, confirmPassword }) => password === confirmPassword,
+          {
+            message: 'Passwords do not match',
+            path: ['confirmPassword'],
+          }
+        ),
+    },
+  },
+  ResetPasswordForm: {
+    POST: {
+      body: z.object({
+        email: z.string().nonempty().email(),
+      }),
+    },
+  },
+  UpdatePasswordForm: {
+    POST: {
+      body: z.object({
+        password: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
+      }),
+    },
+  },
+  CaseNameForm: {
+    POST: {
+      body: z.object({
+        casename: z.string().nonempty(),
+      }),
+    },
+  },
   Widgets_API: {
     POST: {
       body: z.object({

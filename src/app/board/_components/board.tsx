@@ -45,6 +45,9 @@ const BoardRGL: React.FC<I_BoardProps> = ({
   const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
   const [previewMode, setPreviewMode] = useState<boolean>(false)
 
+  /**
+   * Get updated size and cords from layout widgets comparing to original ones
+   */
   const getLayoutsMeta = () => {
     return Object.entries(layouts).reduce(
       (acc, [key, val]) => {
@@ -79,7 +82,9 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     )
   }
 
-  /* Layout to widgets transformation */
+  /**
+   * Layout to widgets transformation with updated size from layouts meta
+   */
   const layoutToWidgets = () => {
     return widgets.map(wgt => {
       const layoutWidgetMeta = layoutsMeta[wgt.id][breakpoint]
@@ -91,6 +96,11 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     })
   }
 
+  /**
+   * Layout widgets to widgets API transformation with updated cords from layouts meta according to format: \
+   * x_[breakpoint] = x \
+   * y_[breakpoint] = y
+   */
   const layoutsToWidgetsAPI = () => {
     /* The same size for each breakpoint but different alignment */
     return widgets
@@ -108,6 +118,8 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         ),
       }))
   }
+
+  // Memorized values to prevent from unnecessary calls
 
   const layoutsMeta = useMemo(() => getLayoutsMeta(), [layouts])
 
@@ -185,11 +197,15 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     })
   }
 
-  /* Handle layout change (drag or resize) */
+  /**
+   * Handle layout change (drag or resize)
+   */
   const handleLayoutChange = (_: any, allLayouts: ReactGridLayout.Layouts) =>
     setLayouts(allLayouts)
 
-  /* Add new widget */
+  /**
+   * Add new widget
+   */
   const addWidget = (
     size: N_WidgetSettings.T_WidgetSize,
     type: N_Widgets.I_WidgetType
@@ -232,7 +248,9 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     dirtyWidgets.current.add(widget.id)
   }
 
-  /* Delete widget */
+  /**
+   * Delete widget
+   */
   const handleWidgetDelete = async (id: string) => {
     if (deleteTimeout.current) {
       clearTimeout(deleteTimeout.current)
@@ -252,7 +270,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         ),
       }))
 
-      /* Consider to add only widget with provided id */
+      // Consider to add only widget with provided id
       widgets.map(({ id }) => id).forEach(id => dirtyWidgets.current.add(id))
     }
 
@@ -263,7 +281,9 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     }, 500)
   }
 
-  /* Resize a widget */
+  /**
+   * Resize a widget
+   */
   const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
     setWidgets(prev =>
       prev.map(wgt =>
@@ -302,7 +322,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     document.cookie = `widgets=${JSON.stringify(widgets)}; path=/`
   }, [widgets])
 
-  /* Testing purposes */
+  // Only for testing purposes
 
   // useEffect(() => {
   //   console.log('Preview mode: ', previewMode)

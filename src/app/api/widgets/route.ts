@@ -1,4 +1,4 @@
-import validations from '@/app/api/_validations'
+import validations from '@/lib/validations'
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { deleteWidget, getWidgets, saveWidgets } from './actions'

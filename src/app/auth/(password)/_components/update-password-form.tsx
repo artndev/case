@@ -17,8 +17,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { updatePasswordSchema } from '@/lib/schemas'
 import { cn } from '@/lib/utils'
+import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeClosed } from 'lucide-react'
 import Image from 'next/image'
@@ -33,7 +33,7 @@ export function UpdatePasswordForm({
 }: I_FormProps) {
   const form = useForm({
     mode: 'onChange',
-    resolver: zodResolver(updatePasswordSchema),
+    resolver: zodResolver(validations.UpdatePasswordForm.POST.body),
     defaultValues: {
       password: '',
     },

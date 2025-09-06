@@ -18,11 +18,6 @@ export interface I_StatePayload {
   casename?: string
 }
 
-export interface I_AxiosResponse<T> {
-  message: string
-  answer: T
-}
-
 export interface I_AuthContext {
   user: User | undefined
   loading: boolean

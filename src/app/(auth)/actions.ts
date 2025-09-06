@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
-import { I_AxiosResponse, I_StatePayload } from '../_types'
+import { I_StatePayload } from '../_types'
 
 export const validateCaseName = async (
   caseName: string

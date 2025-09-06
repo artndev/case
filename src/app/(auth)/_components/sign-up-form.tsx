@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { signUpSchema } from '@/lib/schemas'
+import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeClosed } from 'lucide-react'
 import Link from 'next/link'
@@ -25,12 +25,12 @@ export function SignUpForm({
   onGoogleSubmit,
   defaultValues,
   formTitle,
-}: I_FormProps<z.infer<typeof signUpSchema>> & {
+}: I_FormProps<z.infer<typeof validations.SignUpForm.POST.body>> & {
   onGoogleSubmit: () => Promise<void>
 }) {
   const form = useForm({
     mode: 'onChange',
-    resolver: zodResolver(signUpSchema),
+    resolver: zodResolver(validations.SignUpForm.POST.body),
     defaultValues: defaultValues ?? {
       email: '',
       password: '',

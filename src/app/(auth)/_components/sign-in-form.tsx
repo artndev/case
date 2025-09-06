@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { signInSchema } from '@/lib/schemas'
+import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeClosed } from 'lucide-react'
 import Link from 'next/link'
@@ -24,10 +24,10 @@ import { signInWithOAuth } from '../actions'
 export function SignInForm({
   onSubmit,
   defaultValues,
-}: I_FormProps<z.infer<typeof signInSchema>>) {
+}: I_FormProps<z.infer<typeof validations.SignInForm.POST.body>>) {
   const form = useForm({
     mode: 'onChange',
-    resolver: zodResolver(signInSchema),
+    resolver: zodResolver(validations.SignInForm.POST.body),
     defaultValues: defaultValues ?? {
       email: '',
       password: '',
