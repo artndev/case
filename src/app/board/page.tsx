@@ -43,9 +43,6 @@ const BoardPage = async () => {
     redirect('/error')
   }
 
-  console.log('Fetched: ', widgets)
-
-  /* Make default x - 0 and y - Infinity in db */
   const layouts: Record<string, Layout[]> = {
     md: widgets.map(wgt => ({
       i: wgt.id,
