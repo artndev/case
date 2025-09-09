@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { Smartphone, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Layout, Responsive, WidthProvider } from 'react-grid-layout'
+// Editable styles for RGL
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { v4 as uuidv4 } from 'uuid'
@@ -27,10 +28,14 @@ const BoardRGL: React.FC<I_BoardProps> = ({
   initialWidgetTypes,
   initialLayouts,
 }) => {
+  // Timeouts
+
   const saveTimeout = useRef<NodeJS.Timeout | null>(null)
-  const addTimeout = useRef<NodeJS.Timeout | null>(null)
+  // Timeout for adding widget, update optionally in future
+  // const addTimeout = useRef<NodeJS.Timeout | null>(null)
   const deleteTimeout = useRef<NodeJS.Timeout | null>(null)
 
+  // Refs
   const dirtyWidgets = useRef<Set<string>>(new Set())
   const prevLayoutMeta = useRef<
     Record<
@@ -46,6 +51,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     >
   >({})
 
+  // States
   const [widgets, setWidgets] = useState<N_Board.I_Widget[]>(initialWidgets)
   const [layouts, setLayouts] =
     useState<Record<string, Layout[]>>(initialLayouts)
@@ -162,10 +168,6 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         return
       }
 
-      console.log(
-        dirtyPayload.map(({ user_id, created_at, ...payload }) => payload)
-      )
-
       saveWidgets({
         user_id: userId,
         widgets: dirtyPayload.map(
@@ -173,7 +175,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         ),
       })
         .then(() => {
-          console.log('Saved: ', dirtyPayload)
+          // console.log('Saved: ', dirtyPayload)
 
           dirtyWidgets.current.clear()
         })
@@ -183,8 +185,14 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     }, 500)
   }, [layouts, widgets, breakpoint])
 
+  /**
+   * Write 'previous' layouts meta for handleDragStop
+   */
   const handleDragStart = (_: any) => (prevLayoutMeta.current = layoutsMeta)
 
+  /**
+   * Update repositioned widgets depending on previous layouts meta
+   */
   const handleDragStop = (layout: Layout[]) => {
     dirtyWidgets.current = new Set([
       ...dirtyWidgets.current,
@@ -293,7 +301,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
   }
 
   /**
-   * Resize a widget
+   * Resize widget
    */
   const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
     setWidgets(prev =>
@@ -325,13 +333,13 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     dirtyWidgets.current.add(id)
   }
 
-  useEffect(() => {
-    document.cookie = `layouts=${JSON.stringify(layouts)}; path=/`
-  }, [layouts])
+  // useEffect(() => {
+  //   document.cookie = `layouts=${JSON.stringify(layouts)}; path=/`
+  // }, [layouts])
 
-  useEffect(() => {
-    document.cookie = `widgets=${JSON.stringify(widgets)}; path=/`
-  }, [widgets])
+  // useEffect(() => {
+  //   document.cookie = `widgets=${JSON.stringify(widgets)}; path=/`
+  // }, [widgets])
 
   // Only for testing purposes
 
