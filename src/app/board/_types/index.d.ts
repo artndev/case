@@ -14,12 +14,16 @@ export interface I_BoardProps extends React.ComponentProps<'div'> {
   userId: string
   initialWidgets: N_Board.I_Widget[]
   initialWidgetTypes: N_Widgets.I_WidgetType[]
-  initialLayouts: N_Board.T_Layouts
+  initialLayouts: Record<string, Layout[]>
 }
 
-export interface I_WidgetProps extends React.ComponentProps<'div'> {}
-
-export interface I_WidgetOverlayProps extends React.ComponentProps<'div'> {
-  widget: N_Board.T_WidgetMixed
-  gridSize: number
+export interface I_WidgetProps extends React.ComponentProps<'div'> {
+  breakpoint: N_Board.T_Breakpoint
+  layouts: Record<string, Layout[]>
+  setLayouts: React.Dispatch<React.SetStateAction<Record<string, Layout[]>>>
+  widget: N_Board.I_Widget
+  autoSize?: boolean
+  metadata?: {
+    note: string
+  }
 }

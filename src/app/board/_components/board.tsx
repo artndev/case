@@ -1,7 +1,14 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { BREAKPOINT_MAP, COL_MAP, SIZE_MAP } from '@/lib/config'
+import {
+  BREAKPOINT_MAP,
+  COL_MAP,
+  ROW_HEIGHT,
+  SIZE_MAP,
+  WIDGET_SIZE_MAP,
+  WIDGET_TYPE_MAP,
+} from '@/lib/config'
 import { cn } from '@/lib/utils'
 import { Smartphone, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -56,12 +63,16 @@ const BoardRGL: React.FC<I_BoardProps> = ({
             ([_, size]) => size.w === lwgt.w && size.h === lwgt.h
           )?.[0] as N_WidgetSettings.T_WidgetSize | undefined
 
+          const widget = widgets.find(w => w.id === lwgt.i)
+
           acc[lwgt.i] = {
             ...acc[lwgt.i],
             [key]: {
               x: lwgt.x,
               y: lwgt.y,
-              size: size ?? 'md',
+              size: widget
+                ? WIDGET_SIZE_MAP[widget.widget_type_details.widget_type][0]
+                : 'sm',
             },
           }
         })
@@ -333,18 +344,27 @@ const BoardRGL: React.FC<I_BoardProps> = ({
       {/* Controls */}
       <div className="flex flex-col gap-6 self-start">
         {initialWidgetTypes.map(type => {
-          // console.log(type)
+          const widgetSizes = WIDGET_SIZE_MAP[type.widget_type]
 
           return (
             <div key={type.id} className="flex flex-col gap-3">
               {type.alias}
-              <div className="flex gap-3">
-                <Button onClick={() => addWidget('sm', type)}>Add Small</Button>
-                <Button onClick={() => addWidget('md', type)}>
-                  Add Medium
+
+              {widgetSizes.length > 1 ? (
+                <div className="flex gap-3">
+                  {widgetSizes.map(wgts => {
+                    return (
+                      <Button onClick={() => addWidget(wgts, type)}>
+                        Add '{wgts}'
+                      </Button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <Button onClick={() => addWidget(widgetSizes[0], type)}>
+                  Add widget
                 </Button>
-                <Button onClick={() => addWidget('lg', type)}>Add Large</Button>
-              </div>
+              )}
             </div>
           )
         })}
@@ -373,42 +393,45 @@ const BoardRGL: React.FC<I_BoardProps> = ({
             layouts={layouts!}
             breakpoints={BREAKPOINT_MAP}
             cols={COL_MAP}
-            rowHeight={10}
+            rowHeight={ROW_HEIGHT}
             onLayoutChange={handleLayoutChange}
             onBreakpointChange={newBreakpoint =>
               setBreakpoint(newBreakpoint as N_Board.T_Breakpoint)
             }
             isResizable={false}
             isBounded={true}
+            autoSize={true}
             draggableCancel=".no-drag"
             onDragStop={handleDragStop}
             onDragStart={handleDragStart}
           >
             {layoutWidgets.map(wgt => {
               // console.log(layoutWidgets)
+              const widgetType = wgt.widget_type_details.widget_type
+              const widgetSizes = WIDGET_SIZE_MAP[widgetType]
+              const Widget = WIDGET_TYPE_MAP[widgetType]
 
               return (
-                <div
+                <Widget
                   key={wgt.id}
-                  className="border rounded-sm bg-gray-50 p-2 relative"
+                  widget={wgt}
+                  breakpoint={breakpoint}
+                  layouts={layouts}
+                  setLayouts={setLayouts}
                 >
-                  <div className="drag-handle cursor-move font-bold mb-1">
-                    {wgt.widget_type_details.alias}
-                  </div>
                   <div className="flex gap-1 mt-2 flex-wrap">
-                    {(
-                      ['sm', 'md', 'lg'] as N_WidgetSettings.T_WidgetSize[]
-                    ).map(key => (
-                      <Button
-                        key={key}
-                        variant="ghost"
-                        size="icon"
-                        className="no-drag"
-                        onClick={() => resizeWidget(wgt.id, key)}
-                      >
-                        {key.toUpperCase()}
-                      </Button>
-                    ))}
+                    {widgetSizes.length > 1 &&
+                      widgetSizes.map(key => (
+                        <Button
+                          key={key}
+                          variant="outline"
+                          size="default"
+                          className="no-drag"
+                          onClick={() => resizeWidget(wgt.id, key)}
+                        >
+                          {key.toUpperCase()}
+                        </Button>
+                      ))}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -418,7 +441,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                       <Trash2 />
                     </Button>
                   </div>
-                </div>
+                </Widget>
               )
             })}
           </ResponsiveGridLayout>

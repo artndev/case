@@ -1,16 +1,17 @@
 import Widget1 from '@/app/board/_components/widgets/widget-1'
 import Widget2 from '@/app/board/_components/widgets/widget-2'
+import WidgetNote from '@/app/board/_components/widgets/widget-note'
 import { I_WidgetProps } from '@/app/board/_types'
 
-export const WIDGET_TYPES = ['widget-1', 'widget-2'] as const
-
-export const WIDGET_SIZES = ['sm', 'md', 'lg'] as const
+export const WIDGET_SIZES = ['sm', 'md', 'lg', 'lg-full'] as const
 
 export const BREAKPOINTS = ['sm', 'md'] as const
 
-export const BREAKPOINT_MAP = { sm: 768, md: 769 } as const
+export const BREAKPOINT_MAP = { sm: 768, md: 769 }
 
-export const COL_MAP = { sm: 6, md: 12 } as const
+export const COL_MAP = { sm: 6, md: 12 }
+
+export const ROW_HEIGHT = 10
 
 /**
  * Map each widget size to its grid dimensions
@@ -22,7 +23,8 @@ export const SIZE_MAP: Record<
   sm: { w: 3, h: 10 },
   md: { w: 6, h: 10 },
   lg: { w: 6, h: 14 },
-} as const
+  'lg-full': { w: 12, h: 1 },
+}
 
 /**
  * Map each widget type to its component
@@ -33,4 +35,16 @@ export const WIDGET_TYPE_MAP: Record<
 > = {
   'widget-1': Widget1,
   'widget-2': Widget2,
-} as const
+  'widget-note': WidgetNote,
+}
+
+export const WIDGET_SIZE_MAP: Record<
+  N_WidgetSettings.T_WidgetType,
+  N_WidgetSettings.T_WidgetSize[]
+> = {
+  'widget-1': ['sm', 'md', 'lg'],
+  'widget-2': ['sm', 'md', 'lg'],
+  'widget-note': ['lg-full'],
+}
+
+export const WIDGET_TYPES: string[] = Object.keys(WIDGET_TYPE_MAP)
