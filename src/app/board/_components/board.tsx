@@ -408,10 +408,10 @@ const BoardRGL: React.FC<I_BoardProps> = ({
             }
             isResizable={false}
             isBounded={true}
-            autoSize={true}
             draggableCancel=".no-drag"
             onDragStop={handleDragStop}
             onDragStart={handleDragStart}
+            margin={[10, 10]}
           >
             {layoutWidgets.map(wgt => {
               // console.log(layoutWidgets)

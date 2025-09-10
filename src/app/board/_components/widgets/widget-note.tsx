@@ -15,71 +15,44 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
   ...props
 }) => {
   const contentRef = useRef<HTMLDivElement>(null)
-  const resizeTimeout = useRef<NodeJS.Timeout | null>(null)
+  const prevRows = useRef<number>(0)
 
-  const autoResize = () => {
+  useEffect(() => {
     if (!contentRef.current) {
       return
     }
 
-    // The element whose height is controlled by RGL is the parent's parent.
-    const gridItemElement = contentRef.current.parentElement?.parentElement
-    if (!gridItemElement) return
+    const resizeObserver = new ResizeObserver(() => {
+      const padding = 16 // 1Defined by parents p-2 class
+      const contentHeight = contentRef.current!.scrollHeight + padding
 
-    // Dynamically get the computed vertical padding (e.g., from the 'p-2' class).
-    const computedStyle = getComputedStyle(gridItemElement)
-    const paddingTop = parseFloat(computedStyle.paddingTop)
-    const paddingBottom = parseFloat(computedStyle.paddingBottom)
-    const verticalPadding = paddingTop + paddingBottom
+      const minHeight = 4
+      const marginY = 10 // Set in board properties
 
-    // Get the height of the actual content.
-    const contentHeight = contentRef.current.scrollHeight
+      const newRows = Math.max(
+        minHeight,
+        Math.ceil((contentHeight + marginY) / (ROW_HEIGHT + marginY))
+      )
 
-    // The total required height is the content + the container's padding.
-    const totalRequiredHeight = contentHeight + verticalPadding
-    const minHeight = 4
+      if (prevRows.current !== newRows) {
+        prevRows.current = newRows
 
-    // Calculate the new height based on the total required height.
-    const newHeight = Math.max(
-      minHeight,
-      Math.ceil(totalRequiredHeight / ROW_HEIGHT / 2) + 1 // For mb-1
-    )
+        setLayouts(prev => {
+          const currentLayout = prev[breakpoint] || []
 
-    const currentLayouts = layouts[breakpoint] || []
-    const widgetLayout = currentLayouts.find(l => l.i === widget.id)
-
-    if (widgetLayout && widgetLayout.h === newHeight) {
-      return
-    }
-
-    const updatedLayouts = {
-      ...layouts,
-      [breakpoint]: currentLayouts.map(lwgt =>
-        lwgt.i === widget.id ? { ...lwgt, h: newHeight } : lwgt
-      ),
-    }
-
-    setLayouts(updatedLayouts)
-  }
-
-  useEffect(() => {
-    if (resizeTimeout.current) {
-      clearTimeout(resizeTimeout.current)
-    }
-
-    resizeTimeout.current = setTimeout(autoResize, 100)
-
-    return () => {
-      if (resizeTimeout.current) {
-        clearTimeout(resizeTimeout.current)
+          return {
+            ...prev,
+            [breakpoint]: currentLayout.map(lwgt =>
+              lwgt.i === widget.id ? { ...lwgt, h: newRows } : lwgt
+            ),
+          }
+        })
       }
-    }
-  }, [props])
+    })
 
-  useEffect(() => {
-    const mountTimeout = setTimeout(autoResize, 50)
+    resizeObserver.observe(contentRef.current)
 
-    return () => clearTimeout(mountTimeout)
+    return () => resizeObserver.disconnect()
   }, [])
 
   return (
@@ -91,7 +64,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       {...props}
     >
       <div
-        className="w-full h-full whitespace-pre-wrap break-words overflow-hidden"
+        className="bg-red-500 w-full min-h-full break-words"
         ref={contentRef}
       >
         <div className="drag-handle cursor-move font-bold mb-1">
@@ -101,10 +74,24 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
         {children}
 
         <span>
-          Lorem ipsum dolor, sit amet consectetur adipisicing elit.
-          Necessitatibus dignissimos enim nam tempora repudiandae assumenda
-          laboriosam officia natus repellendus. Inventore nisi eaque unde,
-          aliquam quos asperiores vero. Facere, laudantium ex!
+          Lorem ipsum doloddr, sit amet consectetur adipisicing elit.
+          Necessitatibus ddignisdsdimods enim nam tempora repudiandae assumenda
+          laboriosam officidadsd nddadtus repellendus. Inventore nisi eaque
+          unde, aliquam quos aspesrdioddrdes vero. Facere, laudantium ex!dsdsds
+          Lorem ipsum dolor sit amet consectetur adipisicing elit.
+          Necessitatibus architecto eum tenetur voluptatem reprehenderit dolores
+          distinctio optio eius harum. Assumenda possimus, corrupti saepe quos
+          earum voluptatem rerum eveniet nam reiciendis? Lorem ipsum dolor sit
+          amet consectetur adipisicing elit. Eos, magni inventore perspiciatis
+          Lorem ipsum dolor sit amet consectetur, adipisicing elit. Soluta
+          delectus vitae veritatis enim nisi, explicabo corrupti animi eius
+          commodi facilis mollitia aut temporibus provident molestiae tempora,
+          voluptatum error quidem maxime! Lorem ipsum dolor sit amet consectetur
+          adipisicing elit. Minima similique, iusto quas exercitationem ut ex
+          numquam aliquam aspernatur? Illo possimus magni officiis velit
+          provident accusantium modi, consectetur animi ipsa? Id? Lorem ipsum
+          dolor, sit amet consectetur adipisicing elit. Non totam voluptas est.
+          Veritatis veniam vel cupiditate adipisci libero consectetur mollitia a
         </span>
       </div>
     </Widget>

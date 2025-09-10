@@ -51,6 +51,7 @@ const BoardPage = async () => {
       w: SIZE_MAP[wgt.size].w,
       h: SIZE_MAP[wgt.size].h,
       static: false,
+      isResizable: false,
     })),
     sm: widgets.map(wgt => ({
       i: wgt.id,
@@ -59,6 +60,7 @@ const BoardPage = async () => {
       w: SIZE_MAP[wgt.size].w,
       h: SIZE_MAP[wgt.size].h,
       static: false,
+      isResizable: false,
     })),
   }
 
