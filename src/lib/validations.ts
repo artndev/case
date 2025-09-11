@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { WIDGET_SIZES } from './config'
+import { WIDGET_SIZES } from './constants'
 import * as regexes from './regexes'
 
 /**
@@ -49,6 +49,13 @@ export default {
     POST: {
       body: z.object({
         casename: z.string().nonempty(),
+      }),
+    },
+  },
+  WidgetNoteForm: {
+    POST: {
+      body: z.object({
+        note: z.string().nonempty(),
       }),
     },
   },

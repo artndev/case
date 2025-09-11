@@ -426,8 +426,11 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                   breakpoint={breakpoint}
                   layouts={layouts}
                   setLayouts={setLayouts}
+                  metadata={{
+                    note: "'Lorem Ipsum ",
+                  }}
                 >
-                  <div className="flex gap-1 mt-2 flex-wrap">
+                  <div className="flex gap-1 flex-wrap">
                     {widgetSizes.length > 1 &&
                       widgetSizes.map(key => (
                         <Button
@@ -441,7 +444,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                         </Button>
                       ))}
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="icon"
                       className="no-drag"
                       onClick={() => handleWidgetDelete(wgt.id)}

@@ -3,10 +3,6 @@ import Widget2 from '@/app/board/_components/widgets/widget-2'
 import WidgetNote from '@/app/board/_components/widgets/widget-note'
 import { I_WidgetProps } from '@/app/board/_types'
 
-export const WIDGET_SIZES = ['sm', 'md', 'lg', 'lg-full'] as const
-
-export const BREAKPOINTS = ['sm', 'md'] as const
-
 export const BREAKPOINT_MAP = { sm: 768, md: 769 }
 
 export const COL_MAP = { sm: 6, md: 12 }
