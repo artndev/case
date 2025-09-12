@@ -65,10 +65,6 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     return Object.entries(layouts).reduce(
       (acc, [key, val]) => {
         val.forEach(lwgt => {
-          const size = Object.entries(SIZE_MAP).find(
-            ([_, size]) => size.w === lwgt.w && size.h === lwgt.h
-          )?.[0] as N_WidgetSettings.T_WidgetSize | undefined
-
           const widget = widgets.find(w => w.id === lwgt.i)
 
           acc[lwgt.i] = {
@@ -169,10 +165,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
       }
 
       saveWidgets({
-        user_id: userId,
-        widgets: dirtyPayload.map(
-          ({ user_id, created_at, ...payload }) => payload
-        ),
+        widgets: dirtyPayload,
       })
         .then(() => {
           // console.log('Saved: ', dirtyPayload)
@@ -182,7 +175,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         .catch(err => console.log(err))
 
       dirtyWidgets.current.clear()
-    }, 500)
+    }, 50)
   }, [layouts, widgets, breakpoint])
 
   /**
@@ -229,9 +222,11 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     size: N_WidgetSettings.T_WidgetSize,
     type: N_Widgets.I_WidgetType
   ) => {
-    const { id, created_at, ...payload } = type
+    const { id, ...payload } = type
+
     const widget = {
       id: uuidv4(),
+      user_id: userId,
       x_sm: 0,
       y_sm: Infinity,
       x_md: 0,
@@ -239,7 +234,6 @@ const BoardRGL: React.FC<I_BoardProps> = ({
       size,
       widget_type_id: type.id,
       widget_type_details: payload,
-      metadata: null,
     }
 
     setWidgets(prev => [...prev, widget])
@@ -298,7 +292,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
       deleteWidget(id)
         .then(() => start())
         .catch(err => console.log(err))
-    }, 500)
+    }, 50)
   }
 
   /**

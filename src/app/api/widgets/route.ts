@@ -42,6 +42,8 @@ export const POST = async (request: Request) => {
   try {
     const body = await request.json()
 
+    console.log('BODY: ', body)
+
     validBody = validations.Widgets_API.POST.body.parse(body)
   } catch (err) {
     console.log(err)
@@ -59,7 +61,7 @@ export const POST = async (request: Request) => {
     )
   }
 
-  const res = await saveWidgets(validBody.user_id, validBody.widgets)
+  const res = await saveWidgets(validBody.widgets)
   if (!res) {
     return NextResponse.json(
       { message: 'Server is not responding', answer: null },

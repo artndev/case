@@ -20,26 +20,23 @@ declare global {
         widget_type: N_WidgetSettings.T_WidgetType
       }
       metadata: string | null
-      created_at: string
+      created_at: string | null
     }
   }
 
   namespace N_Widgets_API {
     /* INTERFACES */
 
+    // Id is omitted because of creating new widgets
     export interface I_Widget
       extends PartialKeys<
-        Omit<
-          N_Widgets.I_Widget,
-          'user_id' | 'widget_type_details' | 'created_at'
-        >,
-        'id' | 'widget_type_id' | 'metadata'
+        Omit<N_Widgets.I_Widget, 'widget_type_details'>,
+        'id' | 'widget_type_id' | 'metadata' | 'created_at'
       > {}
 
     /* REQUEST METHODS */
 
     export interface POST {
-      user_id: string
       widgets: N_Widgets_API.I_Widget[]
     }
   }

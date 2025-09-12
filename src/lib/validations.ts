@@ -9,8 +9,8 @@ export default {
   SignInForm: {
     POST: {
       body: z.object({
-        email: z.string().nonempty().email(),
-        password: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
+        email: z.string().email(),
+        password: z.string().regex(regexes.PASSWORD_REGEX),
       }),
     },
   },
@@ -18,9 +18,9 @@ export default {
     POST: {
       body: z
         .object({
-          email: z.string().nonempty().email(),
-          password: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
-          confirmPassword: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
+          email: z.string().email(),
+          password: z.string().regex(regexes.PASSWORD_REGEX),
+          confirmPassword: z.string().regex(regexes.PASSWORD_REGEX),
         })
         .refine(
           ({ password, confirmPassword }) => password === confirmPassword,
@@ -34,21 +34,21 @@ export default {
   ResetPasswordForm: {
     POST: {
       body: z.object({
-        email: z.string().nonempty().email(),
+        email: z.string().email(),
       }),
     },
   },
   UpdatePasswordForm: {
     POST: {
       body: z.object({
-        password: z.string().nonempty().regex(regexes.PASSWORD_REGEX),
+        password: z.string().regex(regexes.PASSWORD_REGEX),
       }),
     },
   },
   CaseNameForm: {
     POST: {
       body: z.object({
-        casename: z.string().nonempty(),
+        casename: z.string().trim().nonempty(),
       }),
     },
   },
@@ -62,18 +62,14 @@ export default {
   Widgets_API: {
     POST: {
       body: z.object({
-        user_id: z
-          .string()
-          .uuid("'user_id' must be in UUID format")
-          .nonempty("'user_id' cannot be empty"),
         widgets: z
           .array(
             z.object({
               id: z.string().uuid("'id' must be in UUID format").optional(),
-              widget_type_id: z
-                .string()
-                .uuid("'widget_type_id' must be in UUID format")
-                .optional(),
+              user_id: z.string().uuid("'user_id' must be in UUID format"),
+              size: z.enum(WIDGET_SIZES, {
+                message: `Cannot found 'size' in suggested values: ${WIDGET_SIZES.join(', ')}`,
+              }),
               x_sm: z.number().nonnegative("'x_sm' cannot be below zero"),
               y_sm: z
                 .number()
@@ -84,10 +80,20 @@ export default {
                 .number()
                 .nonnegative("'y_md' cannot be below zero")
                 .nullable(), // NULL for Infinity
-              size: z.enum(WIDGET_SIZES, {
-                message: `Cannot found 'size' in suggested values: ${WIDGET_SIZES.join(', ')}`,
-              }),
-              metadata: z.string().nonempty().or(z.null()),
+              widget_type_id: z
+                .string()
+                .uuid("'widget_type_id' must be in UUID format")
+                .optional(),
+              metadata: z
+                .string()
+                .trim()
+                .nonempty("'metadata' cannot be empty")
+                .nullish(), // NULL and optional
+              created_at: z
+                .string()
+                .trim()
+                .nonempty("'created_at' cannot be empty")
+                .nullish(), // NULL and optional
             })
           )
           .nonempty("'widgets' cannot be empty"),
@@ -100,10 +106,7 @@ export default {
     },
     DELETE: {
       params: {
-        id: z
-          .string()
-          .uuid("'id' must be in UUID format")
-          .nonempty("'id' cannot be empty"),
+        id: z.string().uuid("'id' must be in UUID format"),
       },
     },
   },

@@ -4,19 +4,16 @@ import { createClient } from '@/utils/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 
 export const saveWidgets = async (
-  userId: string,
   widgets: N_Widgets_API.I_Widget[]
 ): Promise<boolean | null> => {
   const supabase = await createClient()
 
-  // console.log(userId, widgets)
+  console.log(widgets)
 
   // If row exist, provided id will be overlapped
   const { error } = await supabase
     .from('widgets')
-    .upsert([
-      ...widgets.map(wgt => ({ id: uuidv4(), user_id: userId, ...wgt })),
-    ])
+    .upsert([...widgets.map(wgt => ({ id: uuidv4(), ...wgt }))])
 
   if (error) {
     console.log('Error has occurred while saving widgets', error)

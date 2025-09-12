@@ -40,17 +40,9 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
   const onSubmit = async (
     formData: z.infer<typeof validations.WidgetNoteForm.POST.body>
   ) => {
-    const { user_id, widget_type_details, created_at, ...payload } = widget
-
-    // console.log({
-    //   ...payload,
-    //   metadata: {
-    //     note: formData.note,
-    //   },
-    // })
+    const { widget_type_details, ...payload } = widget
 
     await saveWidgets({
-      user_id: userId,
       widgets: [
         {
           ...payload,
