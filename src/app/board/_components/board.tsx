@@ -444,7 +444,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                         </Button>
                       ))}
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
                       className="no-drag"
                       onClick={() => handleWidgetDelete(wgt.id)}

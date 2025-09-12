@@ -21,6 +21,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Check, Edit } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const WidgetNote: React.FC<I_WidgetProps> = ({
   widget,
@@ -29,12 +30,13 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
   setLayouts,
   metadata,
   children,
+  className,
   ...props
 }) => {
   const dragContentRef = useRef<HTMLDivElement>(null)
   const prevRows = useRef<number>(0)
 
-  const [isEditable, setIsEditable] = useState<boolean>(false)
+  const [readOnly, setReadOnly] = useState<boolean>(false)
 
   const form = useForm<z.infer<typeof validations.WidgetNoteForm.POST.body>>({
     mode: 'onChange',
@@ -55,7 +57,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       return
     }
 
-    const padding = 16 // Defined by parent p-2 class
+    const padding = 0 // 16 // Defined by parent p-2 class
     const marginY = 10 // Set in board properties
 
     const minHeight = 4
@@ -100,19 +102,22 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
 
   return (
     <Widget
+      // className={cn('border-destructive', className)}
       widget={widget}
       breakpoint={breakpoint}
       layouts={layouts}
       setLayouts={setLayouts}
+      className={cn(className, !form.formState.isValid && 'border-destructive')}
       {...props}
     >
       <div className="w-full min-h-full break-words">
-        <div className="drag-content flex flex-col gap-2" ref={dragContentRef}>
-          <div className="drag-handle cursor-move font-bold">
-            {widget.widget_type_details.alias}
+        <div className="drag-content flex flex-col" ref={dragContentRef}>
+          <div className="flex justify-between items-center p-2">
+            <div className="drag-handle cursor-move font-bold">⠿</div>
+            <div className="no-drag">{children}</div>
           </div>
 
-          <div className="no-drag flex gap-2 flex-wrap">
+          {/* <div className="no-drag flex gap-2 flex-wrap">
             {children}
 
             <Button
@@ -122,13 +127,14 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
             >
               {isEditable ? <Check /> : <Edit />}
             </Button>
-          </div>
+          </div> */}
 
           <div className="no-drag">
             <Form {...form}>
               <form
-                className="flex flex-col gap-2"
+                className="flex flex-col gap-2 border-t"
                 onSubmit={form.handleSubmit(onSubmit)}
+                onInvalid={e => console.log('INVALID')}
               >
                 <FormField
                   control={form.control}
@@ -137,25 +143,40 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                     <FormItem>
                       <FormControl>
                         <Textarea
+                          className={cn(
+                            `
+                              overflow-hidden resize-none border-none 
+                              focus-visible:ring-ring/0 aria-invalid:ring-destructive/0
+                            `,
+                            readOnly && 'cursor-pointer'
+                          )}
                           onKeyDown={e => {
-                            e.preventDefault()
-
-                            if (e.key !== 'Enter') {
+                            if (e.key !== 'Enter' || !form.formState.isValid) {
                               return
                             }
 
-                            // Maybe submitting here?
+                            setReadOnly(true)
                           }}
+                          onClick={() => {
+                            if (!readOnly) {
+                              return
+                            }
+
+                            setReadOnly(false)
+                          }}
+                          onInput={e => {
+                            e.currentTarget.style.height = 'auto'
+                            e.currentTarget.style.height =
+                              e.currentTarget.scrollHeight + 'px'
+                          }}
+                          readOnly={readOnly}
                           {...field}
                         />
                       </FormControl>
-                      <FormMessage />
+                      {/* <FormMessage /> */}
                     </FormItem>
                   )}
                 />
-                <Button className="mr-auto" type="submit">
-                  Submit
-                </Button>
               </form>
             </Form>
           </div>
