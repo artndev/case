@@ -239,6 +239,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
       size,
       widget_type_id: type.id,
       widget_type_details: payload,
+      metadata: null,
     }
 
     setWidgets(prev => [...prev, widget])
@@ -398,6 +399,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
           )}
         >
           <ResponsiveGridLayout
+            key={breakpoint} // Important part of adjusting size of widget notes
             layouts={layouts!}
             breakpoints={BREAKPOINT_MAP}
             cols={COL_MAP}
@@ -422,13 +424,12 @@ const BoardRGL: React.FC<I_BoardProps> = ({
               return (
                 <Widget
                   key={wgt.id}
+                  userId={userId}
                   widget={wgt}
                   breakpoint={breakpoint}
                   layouts={layouts}
                   setLayouts={setLayouts}
-                  metadata={{
-                    note: "'Lorem Ipsum ",
-                  }}
+                  metadata={wgt?.metadata && JSON.parse(wgt.metadata)}
                 >
                   <div className="flex gap-1 flex-wrap">
                     {widgetSizes.length > 1 &&

@@ -1,29 +1,20 @@
 'use client'
 
 import { I_WidgetProps } from '@/app/board/_types'
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
+import { Textarea } from '@/components/ui/textarea'
 import { ROW_HEIGHT } from '@/lib/config'
+import { cn } from '@/lib/utils'
+import validations from '@/lib/validations'
+import { zodResolver } from '@hookform/resolvers/zod'
 import React, { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import Widget from '../widget'
-import validations from '@/lib/validations'
 import z from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/ui/button'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Check, Edit } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { saveWidgets } from '../../actions'
+import Widget from '../widget'
 
 const WidgetNote: React.FC<I_WidgetProps> = ({
+  userId,
   widget,
   breakpoint,
   layouts,
@@ -42,14 +33,33 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
     mode: 'onChange',
     resolver: zodResolver(validations.WidgetNoteForm.POST.body),
     defaultValues: {
-      note: metadata?.note ?? '',
+      note: metadata?.note ?? 'Write something down here...',
     },
   })
 
-  const onSubmit = (
+  const onSubmit = async (
     formData: z.infer<typeof validations.WidgetNoteForm.POST.body>
   ) => {
-    console.log('Submitted: ', formData.note)
+    const { user_id, widget_type_details, created_at, ...payload } = widget
+
+    // console.log({
+    //   ...payload,
+    //   metadata: {
+    //     note: formData.note,
+    //   },
+    // })
+
+    await saveWidgets({
+      user_id: userId,
+      widgets: [
+        {
+          ...payload,
+          metadata: JSON.stringify({
+            note: formData.note,
+          }),
+        },
+      ],
+    })
   }
 
   const adjustHeight = () => {
@@ -102,12 +112,12 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
 
   return (
     <Widget
-      // className={cn('border-destructive', className)}
+      userId={userId}
       widget={widget}
       breakpoint={breakpoint}
       layouts={layouts}
       setLayouts={setLayouts}
-      className={cn(className, !form.formState.isValid && 'border-destructive')}
+      className={cn(!form.formState.isValid && 'border-destructive', className)}
       {...props}
     >
       <div className="w-full min-h-full break-words">
@@ -117,25 +127,9 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
             <div className="no-drag">{children}</div>
           </div>
 
-          {/* <div className="no-drag flex gap-2 flex-wrap">
-            {children}
-
-            <Button
-              variant={'outline'}
-              size={'icon'}
-              onClick={() => setIsEditable(prev => !prev)}
-            >
-              {isEditable ? <Check /> : <Edit />}
-            </Button>
-          </div> */}
-
           <div className="no-drag">
             <Form {...form}>
-              <form
-                className="flex flex-col gap-2 border-t"
-                onSubmit={form.handleSubmit(onSubmit)}
-                onInvalid={e => console.log('INVALID')}
-              >
+              <form className="flex flex-col gap-2 border-t">
                 <FormField
                   control={form.control}
                   name="note"
@@ -145,7 +139,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                         <Textarea
                           className={cn(
                             `
-                              overflow-hidden resize-none border-none 
+                              resize-none border-none overflow-hidden 
                               focus-visible:ring-ring/0 aria-invalid:ring-destructive/0
                             `,
                             readOnly && 'cursor-pointer'
@@ -156,9 +150,11 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                             }
 
                             setReadOnly(true)
+
+                            form.handleSubmit(onSubmit)()
                           }}
                           onClick={() => {
-                            if (!readOnly) {
+                            if (!readOnly || form.formState.isSubmitting) {
                               return
                             }
 

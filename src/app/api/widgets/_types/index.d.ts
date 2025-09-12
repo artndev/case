@@ -19,6 +19,7 @@ declare global {
         alias: string
         widget_type: N_WidgetSettings.T_WidgetType
       }
+      metadata: string | null
       created_at: string
     }
   }
@@ -32,7 +33,7 @@ declare global {
           N_Widgets.I_Widget,
           'user_id' | 'widget_type_details' | 'created_at'
         >,
-        'id' | 'widget_type_id'
+        'id' | 'widget_type_id' | 'metadata'
       > {}
 
     /* REQUEST METHODS */

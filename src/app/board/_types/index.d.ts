@@ -18,11 +18,11 @@ export interface I_BoardProps extends React.ComponentProps<'div'> {
 }
 
 export interface I_WidgetProps extends React.ComponentProps<'div'> {
+  userId: string
   breakpoint: N_Board.T_Breakpoint
   layouts: Record<string, Layout[]>
   setLayouts: React.Dispatch<React.SetStateAction<Record<string, Layout[]>>>
   widget: N_Board.I_Widget
-  autoSize?: boolean
   metadata?: {
     note: string
   }

@@ -87,6 +87,7 @@ export default {
               size: z.enum(WIDGET_SIZES, {
                 message: `Cannot found 'size' in suggested values: ${WIDGET_SIZES.join(', ')}`,
               }),
+              metadata: z.string().nonempty().or(z.null()),
             })
           )
           .nonempty("'widgets' cannot be empty"),
