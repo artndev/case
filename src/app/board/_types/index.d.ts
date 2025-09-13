@@ -2,9 +2,8 @@ import { Layout } from 'react-grid-layout'
 
 declare global {
   namespace N_Board {
-    // All keys can be omitted but Ill make them optional
     interface I_Widget
-      extends PartialKeys<N_Widgets.I_Widget, 'metadata' | 'created_at'> {}
+      extends PartialKeys<Omit<N_Widgets.I_Widget, 'created_at'>, 'metadata'> {}
 
     type T_Breakpoint = 'md' | 'sm'
   }

@@ -113,15 +113,19 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       {...props}
     >
       <div className="w-full min-h-full break-words">
-        <div className="drag-content flex flex-col" ref={dragContentRef}>
-          <div className="flex justify-between items-center p-2">
-            <div className="drag-handle cursor-move font-bold">⠿</div>
-            <div className="no-drag">{children}</div>
+        <div className="flex flex-col" ref={dragContentRef}>
+          <div className="flex flex-col gap-2 p-2">
+            <div className="flex justify-between items-center">
+              <div className="drag-handle cursor-move font-bold">⠿</div>
+              <div className="no-drag">{children}</div>
+            </div>
+
+            <hr />
           </div>
 
           <div className="no-drag">
             <Form {...form}>
-              <form className="flex flex-col gap-2 border-t">
+              <form className="flex flex-col gap-2">
                 <FormField
                   control={form.control}
                   name="note"
@@ -131,7 +135,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                         <Textarea
                           className={cn(
                             `
-                              resize-none border-none overflow-hidden 
+                              resize-none border-none overflow-hidden p-2 pt-0
                               focus-visible:ring-ring/0 aria-invalid:ring-destructive/0
                             `,
                             readOnly && 'cursor-pointer'
@@ -161,7 +165,6 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                           {...field}
                         />
                       </FormControl>
-                      {/* <FormMessage /> */}
                     </FormItem>
                   )}
                 />

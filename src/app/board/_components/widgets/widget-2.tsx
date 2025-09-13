@@ -5,11 +5,22 @@ import Widget from '../widget'
 const Widget2: React.FC<I_WidgetProps> = ({ widget, children, ...props }) => {
   return (
     <Widget widget={widget} {...props}>
-      <div className="drag-handle cursor-move font-bold mb-1">
-        {widget.widget_type_details.alias}
-      </div>
+      <div className="w-full min-h-full break-words">
+        <div className="flex flex-col">
+          <div className="flex flex-col gap-2 p-2">
+            <div className="flex flex-col gap-2">
+              <div className="drag-handle cursor-move font-bold">⠿</div>
+              <div className="no-drag">{children}</div>
+            </div>
 
-      {children}
+            <hr />
+          </div>
+
+          <div className="no-drag p-2 pt-0">
+            {widget.widget_type_details.alias}
+          </div>
+        </div>
+      </div>
     </Widget>
   )
 }

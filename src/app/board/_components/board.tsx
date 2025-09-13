@@ -14,6 +14,7 @@ import { Smartphone, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Layout, Responsive, WidthProvider } from 'react-grid-layout'
 // Editable styles for RGL
+// ? All changes can be inspected in global.css
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { v4 as uuidv4 } from 'uuid'
@@ -115,7 +116,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
    * y_[breakpoint] = y
    */
   const layoutsToWidgetsAPI = () => {
-    /* The same size for each breakpoint but different alignment */
+    /* Same size for each breakpoint but different alignment */
     return widgets
       .filter(({ id }) => dirtyWidgets.current.has(id))
       .map(({ widget_type_details, ...payload }) => ({
@@ -384,7 +385,6 @@ const BoardRGL: React.FC<I_BoardProps> = ({
       </div>
 
       {/* RGL container */}
-
       <div className="flex justify-center items-center w-full">
         <div
           className={cn(
@@ -393,7 +393,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
           )}
         >
           <ResponsiveGridLayout
-            key={breakpoint} // Important part of adjusting size of widget notes
+            key={breakpoint} // Important part in adjusting size of widget notes
             layouts={layouts!}
             breakpoints={BREAKPOINT_MAP}
             cols={COL_MAP}
@@ -430,9 +430,8 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                       widgetSizes.map(key => (
                         <Button
                           key={key}
-                          variant="outline"
-                          size="default"
-                          className="no-drag"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => resizeWidget(wgt.id, key)}
                         >
                           {key.toUpperCase()}
@@ -441,7 +440,6 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="no-drag"
                       onClick={() => handleWidgetDelete(wgt.id)}
                     >
                       <Trash2 />

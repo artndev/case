@@ -89,11 +89,6 @@ export default {
                 .trim()
                 .nonempty("'metadata' cannot be empty")
                 .nullish(), // NULL and optional
-              created_at: z
-                .string()
-                .trim()
-                .nonempty("'created_at' cannot be empty")
-                .nullish(), // NULL and optional
             })
           )
           .nonempty("'widgets' cannot be empty"),
