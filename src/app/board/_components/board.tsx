@@ -10,7 +10,7 @@ import {
   WIDGET_TYPE_MAP,
 } from '@/lib/config'
 import { cn } from '@/lib/utils'
-import { Smartphone, Trash2 } from 'lucide-react'
+import { Settings, Smartphone, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Layout, Responsive, WidthProvider } from 'react-grid-layout'
 // Editable styles for RGL
@@ -20,6 +20,18 @@ import 'react-resizable/css/styles.css'
 import { v4 as uuidv4 } from 'uuid'
 import { I_BoardProps } from '../_types'
 import { deleteWidget, saveWidgets } from '../actions'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Portal } from '@radix-ui/react-popover'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
@@ -58,6 +70,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     useState<Record<string, Layout[]>>(initialLayouts)
   const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
   const [previewMode, setPreviewMode] = useState<boolean>(false)
+  const [open, setOpen] = useState<boolean>(false)
 
   /**
    * Get updated size and cords from layout widgets comparing to original ones
@@ -388,7 +401,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
       <div className="flex justify-center items-center w-full">
         <div
           className={cn(
-            'layout w-full border rounded-sm bg-white',
+            'layout w-full border rounded-md bg-white',
             previewMode && 'sm:w-[350px] sm:border-10'
           )}
         >
@@ -407,7 +420,10 @@ const BoardRGL: React.FC<I_BoardProps> = ({
             draggableCancel=".no-drag"
             onDragStop={handleDragStop}
             onDragStart={handleDragStart}
-            margin={[10, 10]}
+            margin={{
+              md: [30, 30],
+              sm: [15, 15],
+            }}
           >
             {layoutWidgets.map(wgt => {
               // console.log(layoutWidgets)
@@ -425,26 +441,38 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                   setLayouts={setLayouts}
                   metadata={wgt?.metadata && JSON.parse(wgt.metadata)}
                 >
-                  <div className="flex gap-1 flex-wrap">
-                    {widgetSizes.length > 1 &&
-                      widgetSizes.map(key => (
-                        <Button
-                          key={key}
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => resizeWidget(wgt.id, key)}
-                        >
-                          {key.toUpperCase()}
+                  {widgetSizes.length > 1 && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Settings />
                         </Button>
-                      ))}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleWidgetDelete(wgt.id)}
-                    >
-                      <Trash2 />
-                    </Button>
-                  </div>
+                      </PopoverTrigger>
+
+                      <PopoverContent className="flex flex-col w-[200px] p-0 no-drag">
+                        {widgetSizes.map(key => (
+                          <Button
+                            key={key}
+                            variant="ghost"
+                            className="justify-start"
+                            onClick={() => resizeWidget(wgt.id, key)}
+                          >
+                            {key === 'sm' && 'Small size'}
+                            {key === 'md' && 'Medium size'}
+                            {key === 'lg' && 'Large size'}
+                          </Button>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleWidgetDelete(wgt.id)}
+                  >
+                    <Trash2 />
+                  </Button>
                 </Widget>
               )
             })}

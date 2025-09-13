@@ -60,7 +60,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
     }
 
     const padding = 0 // 16 // Defined by parent p-2 class
-    const marginY = 10 // Set in board properties
+    const marginY = breakpoint === 'sm' ? 15 : 30 // Set in board properties
 
     const minHeight = 4
     const contentHeight = dragContentRef.current.scrollHeight + padding
@@ -135,7 +135,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                         <Textarea
                           className={cn(
                             `
-                              resize-none border-none overflow-hidden p-2 pt-0
+                              resize-none text-base! border-none overflow-hidden p-2 pt-0
                               focus-visible:ring-ring/0 aria-invalid:ring-destructive/0
                             `,
                             readOnly && 'cursor-pointer'
