@@ -3,7 +3,6 @@
 import { I_WidgetProps } from '@/app/board/_types'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
-import { ROW_HEIGHT } from '@/lib/config'
 import { cn } from '@/lib/utils'
 import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -22,6 +21,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
   metadata,
   children,
   className,
+  rowHeight = 15,
   ...props
 }) => {
   const dragContentRef = useRef<HTMLDivElement>(null)
@@ -67,7 +67,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
 
     const newRows = Math.max(
       minHeight,
-      Math.ceil((contentHeight + marginY) / (ROW_HEIGHT + marginY))
+      Math.ceil((contentHeight + marginY) / (rowHeight + marginY))
     )
 
     if (prevRows.current === newRows) {
@@ -110,6 +110,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       layouts={layouts}
       setLayouts={setLayouts}
       className={cn(!form.formState.isValid && 'border-destructive', className)}
+      rowHeight={rowHeight}
       {...props}
     >
       <div className="w-full min-h-full break-words">

@@ -7,19 +7,29 @@ export const BREAKPOINT_MAP = { sm: 768, md: 769 }
 
 export const COL_MAP = { sm: 6, md: 12 }
 
-export const ROW_HEIGHT = 10
-
 /**
  * Map each widget size to its grid dimensions
  */
 export const SIZE_MAP: Record<
   N_WidgetSettings.T_WidgetSize,
-  { w: number; h: number }
+  Record<N_Board.T_Breakpoint, { w: number; h: number }>
 > = {
-  sm: { w: 3, h: 10 },
-  md: { w: 6, h: 10 },
-  lg: { w: 6, h: 14 },
-  'lg-full': { w: 12, h: 1 },
+  sm: {
+    sm: { w: 3, h: 3 },
+    md: { w: 3, h: 3 },
+  },
+  md: {
+    sm: { w: 6, h: 4 },
+    md: { w: 4, h: 4 },
+  },
+  lg: {
+    sm: { w: 6, h: 5 },
+    md: { w: 6, h: 4 },
+  },
+  'lg-full': {
+    sm: { w: 12, h: 1 },
+    md: { w: 12, h: 1 },
+  },
 }
 
 /**

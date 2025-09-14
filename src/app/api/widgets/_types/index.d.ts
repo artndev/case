@@ -1,4 +1,4 @@
-import { WIDGET_SIZES } from '@/lib/config'
+import { WIDGET_SIZES } from '@/lib/constants'
 
 declare global {
   namespace N_WidgetSettings {

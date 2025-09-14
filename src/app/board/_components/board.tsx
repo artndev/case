@@ -2,9 +2,13 @@
 
 import { Button } from '@/components/ui/button'
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
   BREAKPOINT_MAP,
   COL_MAP,
-  ROW_HEIGHT,
   SIZE_MAP,
   WIDGET_SIZE_MAP,
   WIDGET_TYPE_MAP,
@@ -20,18 +24,6 @@ import 'react-resizable/css/styles.css'
 import { v4 as uuidv4 } from 'uuid'
 import { I_BoardProps } from '../_types'
 import { deleteWidget, saveWidgets } from '../actions'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@/components/ui/select'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Portal } from '@radix-ui/react-popover'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
@@ -42,7 +34,6 @@ const BoardRGL: React.FC<I_BoardProps> = ({
   initialLayouts,
 }) => {
   // Timeouts
-
   const saveTimeout = useRef<NodeJS.Timeout | null>(null)
   // Timeout for adding widget, update optionally in future
   // const addTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -70,7 +61,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     useState<Record<string, Layout[]>>(initialLayouts)
   const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
   const [previewMode, setPreviewMode] = useState<boolean>(false)
-  const [open, setOpen] = useState<boolean>(false)
+  const [rowHeight, setRowHeight] = useState(10)
 
   /**
    * Get updated size and cords from layout widgets comparing to original ones
@@ -87,7 +78,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
               x: lwgt.x,
               y: lwgt.y,
               size: widget
-                ? WIDGET_SIZE_MAP[widget.widget_type_details.widget_type][0]
+                ? widget.size // WIDGET_SIZE_MAP[widget.widget_type_details.widget_type][0]
                 : 'sm',
             },
           }
@@ -261,8 +252,8 @@ const BoardRGL: React.FC<I_BoardProps> = ({
               i: widget.id,
               x: 0,
               y: Infinity,
-              w: SIZE_MAP[size].w,
-              h: SIZE_MAP[size].h,
+              w: SIZE_MAP[size][breakpoint].w,
+              h: SIZE_MAP[size][breakpoint].h,
               static: false,
             },
           ]
@@ -329,7 +320,11 @@ const BoardRGL: React.FC<I_BoardProps> = ({
         (acc, [key, val]) => {
           acc[key] = val.map(lwgt =>
             lwgt.i === id
-              ? { ...lwgt, w: SIZE_MAP[size].w, h: SIZE_MAP[size].h }
+              ? {
+                  ...lwgt,
+                  w: SIZE_MAP[size][breakpoint].w,
+                  h: SIZE_MAP[size][breakpoint].h,
+                }
               : lwgt
           )
 
@@ -406,12 +401,24 @@ const BoardRGL: React.FC<I_BoardProps> = ({
           )}
         >
           <ResponsiveGridLayout
-            key={breakpoint} // Important part in adjusting size of widget notes
+            key={breakpoint + '-' + rowHeight.toString()} // Important part in adjusting size of widget notes
             layouts={layouts!}
             breakpoints={BREAKPOINT_MAP}
             cols={COL_MAP}
-            rowHeight={ROW_HEIGHT}
+            rowHeight={rowHeight}
             onLayoutChange={handleLayoutChange}
+            onWidthChange={(containerWidth, margin, cols, containerPadding) => {
+              const [marginX] = margin
+              const [containerPaddingX] = containerPadding
+
+              const totalMarginX = marginX * (cols - 1)
+              const totalPaddingX = containerPaddingX * 2
+
+              const colWidth =
+                (containerWidth - totalMarginX - totalPaddingX) / cols
+
+              setRowHeight(Math.round(colWidth))
+            }}
             onBreakpointChange={newBreakpoint =>
               setBreakpoint(newBreakpoint as N_Board.T_Breakpoint)
             }
@@ -424,6 +431,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
               md: [30, 30],
               sm: [15, 15],
             }}
+            containerPadding={[10, 10]}
           >
             {layoutWidgets.map(wgt => {
               // console.log(layoutWidgets)
@@ -440,6 +448,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
                   layouts={layouts}
                   setLayouts={setLayouts}
                   metadata={wgt?.metadata && JSON.parse(wgt.metadata)}
+                  rowHeight={rowHeight}
                 >
                   {widgetSizes.length > 1 && (
                     <Popover>

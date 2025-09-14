@@ -22,6 +22,7 @@ export interface I_WidgetProps extends React.ComponentProps<'div'> {
   layouts: Record<string, Layout[]>
   setLayouts: React.Dispatch<React.SetStateAction<Record<string, Layout[]>>>
   widget: N_Board.I_Widget
+  rowHeight?: number
   metadata?: {
     note: string
   }

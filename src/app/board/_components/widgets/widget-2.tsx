@@ -8,7 +8,7 @@ const Widget2: React.FC<I_WidgetProps> = ({ widget, children, ...props }) => {
       <div className="w-full min-h-full break-words">
         <div className="flex flex-col">
           <div className="flex flex-col gap-2 p-2">
-            <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
               <div className="drag-handle cursor-move font-bold">⠿</div>
               <div className="no-drag">{children}</div>
             </div>

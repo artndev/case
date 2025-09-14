@@ -1,5 +1,6 @@
 import axios from '@/lib/axios-server'
 import { SIZE_MAP } from '@/lib/config'
+import { BREAKPOINTS } from '@/lib/constants'
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -44,24 +45,22 @@ const BoardPage = async () => {
   }
 
   const layouts: Record<string, Layout[]> = {
-    md: widgets.map(wgt => ({
-      i: wgt.id,
-      x: wgt.x_md,
-      y: wgt.y_md ?? Infinity,
-      w: SIZE_MAP[wgt.size].w,
-      h: SIZE_MAP[wgt.size].h,
-      static: false,
-      isResizable: false,
-    })),
-    sm: widgets.map(wgt => ({
-      i: wgt.id,
-      x: wgt.x_sm,
-      y: wgt.y_sm ?? Infinity,
-      w: SIZE_MAP[wgt.size].w,
-      h: SIZE_MAP[wgt.size].h,
-      static: false,
-      isResizable: false,
-    })),
+    ...BREAKPOINTS.reduce(
+      (acc, breakpoint) => {
+        acc[breakpoint] = widgets.map(wgt => ({
+          i: wgt.id,
+          x: wgt[breakpoint === 'md' ? 'x_md' : 'x_sm'],
+          y: wgt[breakpoint === 'md' ? 'y_md' : 'y_sm'] ?? Infinity,
+          w: SIZE_MAP[wgt.size][breakpoint].w,
+          h: SIZE_MAP[wgt.size][breakpoint].h,
+          static: false,
+          isResizable: false,
+        }))
+
+        return acc
+      },
+      {} as Record<N_Board.T_Breakpoint, Layout[]>
+    ),
   }
 
   // const savedLayouts = cookieStore.get('layouts')?.value
