@@ -55,7 +55,14 @@ export default {
   WidgetNoteForm: {
     POST: {
       body: z.object({
-        note: z.string().trim().nonempty(), // FIX TRIM FOR OTHER ONES!
+        note: z.string().trim().nonempty(),
+      }),
+    },
+  },
+  WidgetLinkForm: {
+    POST: {
+      body: z.object({
+        link: z.string().trim().nonempty(),
       }),
     },
   },

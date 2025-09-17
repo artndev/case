@@ -129,6 +129,17 @@
     @apply hidden;
   }
 
+  /* Preventing widget being overlapped by its placeholder */
+
+  .react-grid-item {
+    z-index: 2;
+  }
+
+  .react-grid-item.react-draggable-dragging {
+    z-index: 3 !important;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+  }
+
   .react-grid-item.react-grid-placeholder {
     background-color: grey !important;
     background-image: url('/plus.svg') !important;

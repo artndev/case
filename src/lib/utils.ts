@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from 'clsx'
+import React from 'react'
 import { twMerge } from 'tailwind-merge'
 
 export const cn = (...inputs: ClassValue[]): string => {
@@ -7,4 +8,8 @@ export const cn = (...inputs: ClassValue[]): string => {
 
 export const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(value, max))
+}
+
+export const countNodes = (children: React.ReactNode): number => {
+  return React.Children.count(children)
 }

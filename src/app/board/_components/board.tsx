@@ -1,341 +1,41 @@
 'use client'
 
+import { useBoardContext } from '@/app/_contexts/board-context'
 import { Button } from '@/components/ui/button'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 import {
   BREAKPOINT_MAP,
   COL_MAP,
-  SIZE_MAP,
   WIDGET_SIZE_MAP,
   WIDGET_TYPE_MAP,
 } from '@/lib/config'
 import { cn } from '@/lib/utils'
-import { Settings, Smartphone, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Layout, Responsive, WidthProvider } from 'react-grid-layout'
+import { Smartphone } from 'lucide-react'
+import { useState } from 'react'
+import { Responsive, WidthProvider } from 'react-grid-layout'
 // Editable styles for RGL
 // ? All changes can be inspected in global.css
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
-import { v4 as uuidv4 } from 'uuid'
 import { I_BoardProps } from '../_types'
-import { deleteWidget, saveWidgets } from '../actions'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
-const BoardRGL: React.FC<I_BoardProps> = ({
-  userId,
-  initialWidgets,
-  initialWidgetTypes,
-  initialLayouts,
-}) => {
-  // Timeouts
-  const saveTimeout = useRef<NodeJS.Timeout | null>(null)
-  // Timeout for adding widget, update optionally in future
-  // const addTimeout = useRef<NodeJS.Timeout | null>(null)
-  const deleteTimeout = useRef<NodeJS.Timeout | null>(null)
+const BoardRGL: React.FC<I_BoardProps> = ({ initialWidgetTypes }) => {
+  const {
+    layouts,
+    breakpoint,
+    setBreakpoint,
+    isDraggable,
+    layoutWidgets,
+    addWidget,
+    resizeWidget,
+    handleDragStart,
+    handleDragStop,
+    handleLayoutChange,
+  } = useBoardContext()
 
-  // Refs
-  const dirtyWidgets = useRef<Set<string>>(new Set())
-  const prevLayoutMeta = useRef<
-    Record<
-      string,
-      Record<
-        string,
-        {
-          x: number
-          y: number
-          size: N_WidgetSettings.T_WidgetSize
-        }
-      >
-    >
-  >({})
-
-  // States
-  const [widgets, setWidgets] = useState<N_Board.I_Widget[]>(initialWidgets)
-  const [layouts, setLayouts] =
-    useState<Record<string, Layout[]>>(initialLayouts)
-  const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
   const [previewMode, setPreviewMode] = useState<boolean>(false)
-  const [rowHeight, setRowHeight] = useState(10)
-
-  /**
-   * Get updated size and cords from layout widgets comparing to original ones
-   */
-  const getLayoutsMeta = () => {
-    return Object.entries(layouts).reduce(
-      (acc, [key, val]) => {
-        val.forEach(lwgt => {
-          const widget = widgets.find(w => w.id === lwgt.i)
-
-          acc[lwgt.i] = {
-            ...acc[lwgt.i],
-            [key]: {
-              x: lwgt.x,
-              y: lwgt.y,
-              size: widget
-                ? widget.size // WIDGET_SIZE_MAP[widget.widget_type_details.widget_type][0]
-                : 'sm',
-            },
-          }
-        })
-
-        return acc
-      },
-      {} as Record<
-        string,
-        Record<
-          string,
-          {
-            x: number
-            y: number
-            size: N_WidgetSettings.T_WidgetSize
-          }
-        >
-      >
-    )
-  }
-
-  /**
-   * Layout to widgets transformation with updated size from layouts meta
-   */
-  const layoutToWidgets = () => {
-    return widgets.map(wgt => {
-      const layoutWidgetMeta = layoutsMeta[wgt.id][breakpoint]
-
-      return {
-        ...wgt,
-        size: layoutWidgetMeta.size,
-      }
-    })
-  }
-
-  /**
-   * Layout widgets to widgets API transformation with updated cords from layouts meta according to format: \
-   * x_[breakpoint] = x \
-   * y_[breakpoint] = y
-   */
-  const layoutsToWidgetsAPI = () => {
-    /* Same size for each breakpoint but different alignment */
-    return widgets
-      .filter(({ id }) => dirtyWidgets.current.has(id))
-      .map(({ widget_type_details, ...payload }) => ({
-        ...payload,
-        ...Object.entries(layoutsMeta[payload.id]).reduce(
-          (acc, [key, val]) => {
-            acc[`x_${key}`] = val.x
-            acc[`y_${key}`] = val.y
-
-            return acc
-          },
-          {} as Record<string, number>
-        ),
-      }))
-  }
-
-  // Memorized values to prevent from unnecessary calls
-
-  const layoutsMeta = useMemo(() => getLayoutsMeta(), [layouts])
-
-  const layoutWidgets = useMemo(
-    () => layoutToWidgets(),
-    [layouts, widgets, breakpoint]
-  )
-
-  const layoutWidgetsAPI = useMemo(
-    () => layoutsToWidgetsAPI(),
-    [layouts, widgets]
-  )
-
-  useEffect(() => {
-    if (dirtyWidgets.current.size === 0) {
-      return
-    }
-
-    if (saveTimeout.current) {
-      clearTimeout(saveTimeout.current)
-    }
-
-    saveTimeout.current = setTimeout(() => {
-      const dirtyPayload = layoutWidgetsAPI.filter(w =>
-        dirtyWidgets.current.has(w.id)
-      )
-
-      if (dirtyPayload.length === 0) {
-        return
-      }
-
-      saveWidgets({
-        widgets: dirtyPayload,
-      })
-        .then(() => {
-          // console.log('Saved: ', dirtyPayload)
-
-          dirtyWidgets.current.clear()
-        })
-        .catch(err => console.log(err))
-
-      dirtyWidgets.current.clear()
-    }, 50)
-  }, [layouts, widgets, breakpoint])
-
-  /**
-   * Write 'previous' layouts meta for handleDragStop
-   */
-  const handleDragStart = (_: any) => (prevLayoutMeta.current = layoutsMeta)
-
-  /**
-   * Update repositioned widgets depending on previous layouts meta
-   */
-  const handleDragStop = (layout: Layout[]) => {
-    dirtyWidgets.current = new Set([
-      ...dirtyWidgets.current,
-      ...layout
-        .filter(lwgt => {
-          const prevLayoutWidgetMeta =
-            prevLayoutMeta.current[lwgt.i]?.[breakpoint]
-
-          return (
-            prevLayoutWidgetMeta &&
-            (prevLayoutWidgetMeta.x !== lwgt.x ||
-              prevLayoutWidgetMeta.y !== lwgt.y)
-          )
-        })
-        .map(lwgt => lwgt.i),
-    ])
-
-    setLayouts({
-      ...layouts,
-      [breakpoint]: layout,
-    })
-  }
-
-  /**
-   * Handle layout change (drag or resize)
-   */
-  const handleLayoutChange = (_: any, allLayouts: ReactGridLayout.Layouts) =>
-    setLayouts(allLayouts)
-
-  /**
-   * Add new widget
-   */
-  const addWidget = (
-    size: N_WidgetSettings.T_WidgetSize,
-    type: N_Widgets.I_WidgetType
-  ) => {
-    const { id, ...payload } = type
-
-    const widget = {
-      id: uuidv4(),
-      user_id: userId,
-      x_sm: 0,
-      y_sm: Infinity,
-      x_md: 0,
-      y_md: Infinity,
-      size,
-      widget_type_id: type.id,
-      widget_type_details: payload,
-    }
-
-    setWidgets(prev => [...prev, widget])
-
-    setLayouts(prev => ({
-      ...Object.entries(prev).reduce(
-        (acc, [key, val]) => {
-          acc[key] = [
-            ...val,
-            {
-              i: widget.id,
-              x: 0,
-              y: Infinity,
-              w: SIZE_MAP[size][breakpoint].w,
-              h: SIZE_MAP[size][breakpoint].h,
-              static: false,
-            },
-          ]
-
-          return acc
-        },
-        {} as Record<string, Layout[]>
-      ),
-    }))
-
-    dirtyWidgets.current.add(widget.id)
-  }
-
-  /**
-   * Delete widget
-   */
-  const handleWidgetDelete = async (id: string) => {
-    if (deleteTimeout.current) {
-      clearTimeout(deleteTimeout.current)
-    }
-
-    const start = () => {
-      setWidgets(prev => prev.filter(wgt => wgt.id !== id))
-
-      setLayouts(prev => ({
-        ...Object.entries(prev).reduce(
-          (acc, [key, val]) => {
-            acc[key] = val.filter(lwgt => lwgt.i !== id)
-
-            return acc
-          },
-          {} as Record<string, Layout[]>
-        ),
-      }))
-
-      // Consider to add only widget with provided id
-      widgets.map(({ id }) => id).forEach(id => dirtyWidgets.current.add(id))
-    }
-
-    deleteTimeout.current = setTimeout(() => {
-      deleteWidget(id)
-        .then(() => start())
-        .catch(err => console.log(err))
-    }, 50)
-  }
-
-  /**
-   * Resize widget
-   */
-  const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
-    setWidgets(prev =>
-      prev.map(wgt =>
-        wgt.id === id
-          ? {
-              ...wgt,
-              size,
-            }
-          : wgt
-      )
-    )
-
-    setLayouts(prev => ({
-      ...Object.entries(prev).reduce(
-        (acc, [key, val]) => {
-          acc[key] = val.map(lwgt =>
-            lwgt.i === id
-              ? {
-                  ...lwgt,
-                  w: SIZE_MAP[size][breakpoint].w,
-                  h: SIZE_MAP[size][breakpoint].h,
-                }
-              : lwgt
-          )
-
-          return acc
-        },
-        {} as Record<string, Layout[]>
-      ),
-    }))
-
-    dirtyWidgets.current.add(id)
-  }
+  const [rowHeight, setRowHeight] = useState<number>(15)
 
   // useEffect(() => {
   //   document.cookie = `layouts=${JSON.stringify(layouts)}; path=/`
@@ -355,31 +55,21 @@ const BoardRGL: React.FC<I_BoardProps> = ({
     <div className="flex flex-col gap-6 max-w-[900px] w-full">
       {/* Controls */}
       <div className="flex flex-col gap-6 self-start">
-        {initialWidgetTypes.map(type => {
-          const widgetSizes = WIDGET_SIZE_MAP[type.widget_type]
+        <div className="grid grid-cols-2 gap-6">
+          {initialWidgetTypes.map(type => {
+            const widgetSizes = WIDGET_SIZE_MAP[type.widget_type]
 
-          return (
-            <div key={type.id} className="flex flex-col gap-3">
-              {type.alias}
+            return (
+              <div key={type.id} className="flex flex-col gap-3">
+                {type.alias}
 
-              {widgetSizes.length > 1 ? (
-                <div className="flex gap-3">
-                  {widgetSizes.map(wgts => {
-                    return (
-                      <Button onClick={() => addWidget(wgts, type)}>
-                        Add '{wgts}'
-                      </Button>
-                    )
-                  })}
-                </div>
-              ) : (
                 <Button onClick={() => addWidget(widgetSizes[0], type)}>
                   Add widget
                 </Button>
-              )}
-            </div>
-          )
-        })}
+              </div>
+            )
+          })}
+        </div>
 
         {/* Preview toggle */}
         <Button
@@ -423,6 +113,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({
               setBreakpoint(newBreakpoint as N_Board.T_Breakpoint)
             }
             isResizable={false}
+            isDraggable={isDraggable}
             isBounded={true}
             draggableCancel=".no-drag"
             onDragStop={handleDragStop}
@@ -440,48 +131,20 @@ const BoardRGL: React.FC<I_BoardProps> = ({
               const Widget = WIDGET_TYPE_MAP[widgetType]
 
               return (
-                <Widget
-                  key={wgt.id}
-                  userId={userId}
-                  widget={wgt}
-                  breakpoint={breakpoint}
-                  layouts={layouts}
-                  setLayouts={setLayouts}
-                  metadata={wgt?.metadata && JSON.parse(wgt.metadata)}
-                  rowHeight={rowHeight}
-                >
-                  {widgetSizes.length > 1 && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Settings />
-                        </Button>
-                      </PopoverTrigger>
-
-                      <PopoverContent className="flex flex-col w-[200px] p-0 no-drag">
-                        {widgetSizes.map(key => (
-                          <Button
-                            key={key}
-                            variant="ghost"
-                            className="justify-start"
-                            onClick={() => resizeWidget(wgt.id, key)}
-                          >
-                            {key === 'sm' && 'Small size'}
-                            {key === 'md' && 'Medium size'}
-                            {key === 'lg' && 'Large size'}
-                          </Button>
-                        ))}
-                      </PopoverContent>
-                    </Popover>
-                  )}
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleWidgetDelete(wgt.id)}
-                  >
-                    <Trash2 />
-                  </Button>
+                <Widget key={wgt.id} rowHeight={rowHeight} widget={wgt}>
+                  {widgetSizes.length > 1 &&
+                    widgetSizes.map(key => (
+                      <Button
+                        key={key}
+                        variant="ghost"
+                        className="justify-start"
+                        onClick={() => resizeWidget(wgt.id, key)}
+                      >
+                        {key === 'sm' && 'Small size'}
+                        {key === 'md' && 'Medium size'}
+                        {key === 'lg' && 'Large size'}
+                      </Button>
+                    ))}
                 </Widget>
               )
             })}

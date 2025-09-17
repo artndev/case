@@ -1,5 +1,4 @@
-import Widget1 from '@/app/board/_components/widgets/widget-1'
-import Widget2 from '@/app/board/_components/widgets/widget-2'
+import Widget1 from '@/app/board/_components/widgets/widget-link'
 import WidgetNote from '@/app/board/_components/widgets/widget-note'
 import { I_WidgetProps } from '@/app/board/_types'
 
@@ -39,18 +38,16 @@ export const WIDGET_TYPE_MAP: Record<
   N_WidgetSettings.T_WidgetType,
   React.FC<I_WidgetProps>
 > = {
-  'widget-1': Widget1,
-  'widget-2': Widget2,
   'widget-note': WidgetNote,
+  'widget-link': Widget1,
 }
 
 export const WIDGET_SIZE_MAP: Record<
   N_WidgetSettings.T_WidgetType,
   N_WidgetSettings.T_WidgetSize[]
 > = {
-  'widget-1': ['sm', 'md', 'lg'],
-  'widget-2': ['sm', 'md', 'lg'],
   'widget-note': ['lg-full'],
+  'widget-link': ['sm', 'md'],
 }
 
 export const WIDGET_TYPES: string[] = Object.keys(WIDGET_TYPE_MAP)

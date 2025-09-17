@@ -6,6 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Layout } from 'react-grid-layout'
 import Board from './_components/board'
+import { BoardProvider } from '../_contexts/board-context'
 
 const BoardPage = async () => {
   const supabase = await createClient()
@@ -68,12 +69,13 @@ const BoardPage = async () => {
 
   return (
     <div className="flex justify-center items-center w-screen min-h-screen p-[10px]">
-      <Board
+      <BoardProvider
         userId={user.id}
         initialWidgets={widgets}
-        initialWidgetTypes={widgetTypes}
         initialLayouts={layouts}
-      />
+      >
+        <Board initialWidgetTypes={widgetTypes} />
+      </BoardProvider>
     </div>
   )
 }

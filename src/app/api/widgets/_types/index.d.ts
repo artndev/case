@@ -3,6 +3,11 @@ import { WIDGET_SIZES } from '@/lib/constants'
 declare global {
   namespace N_WidgetSettings {
     type T_WidgetSize = (typeof WIDGET_SIZES)[number]
+
+    type T_WidgetMetadata = {
+      link: string
+      note: string
+    }
   }
 
   namespace N_Widgets {
