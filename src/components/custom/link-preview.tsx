@@ -17,7 +17,6 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
   ...props
 }) => {
   const [data, setData] = useState<I_LinkPreviewResponseFull | null>(null)
-  const [debounce, setDebounce] = useState<boolean>(false)
 
   const getData = () => {
     return axios
