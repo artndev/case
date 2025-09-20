@@ -7,7 +7,7 @@ declare global {
   export type RequiredKeys<T, K extends keyof T> = Omit<T, K> &
     Required<Pick<T, K>>
 
-  export interface I_AxiosResponse<T> {
+  export interface I_AxiosResponse<T> extends AxiosResponse {
     message: string
     answer: T
   }

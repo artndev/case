@@ -8,8 +8,6 @@ export const saveWidgets = async (
 ): Promise<boolean | null> => {
   const supabase = await createClient()
 
-  console.log(widgets)
-
   // If row exist, provided id will be overlapped
   const { error } = await supabase
     .from('widgets')

@@ -1,10 +1,10 @@
-import type { I_ButtonArrowProps } from '@/components/types'
+import type { I_ArrowButtonProps } from '@/components/types'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import React from 'react'
 
-const ArrowButton: React.FC<I_ButtonArrowProps> = ({
+const ArrowButton: React.FC<I_ArrowButtonProps> = ({
   direction,
   variant,
   isExpanded,

@@ -3,22 +3,22 @@
 import { saveWidgets } from '@/app/_contexts/actions'
 import { useBoardContext } from '@/app/_contexts/board-context'
 import { I_WidgetProps } from '@/app/board/_types'
+import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
-import { Textarea } from '@/components/ui/textarea'
-import { cn, countNodes } from '@/lib/utils'
-import validations from '@/lib/validations'
-import { zodResolver } from '@hookform/resolvers/zod'
-import React, { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import z from 'zod'
-import Widget from '../widget'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
+import validations from '@/lib/validations'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Settings, Trash2 } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import z from 'zod'
+import Widget from '../widget'
 
 const WidgetNote: React.FC<I_WidgetProps> = ({
   widget,
@@ -143,7 +143,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
           </div>
         </div>
 
-        <hr className="m-2 mt-0" />
+        <hr className="mx-2 mb-4" />
 
         <div className="no-drag">
           <Form {...form}>

@@ -5,7 +5,8 @@ declare global {
     type T_WidgetSize = (typeof WIDGET_SIZES)[number]
 
     type T_WidgetMetadata = {
-      link: string
+      url: string
+      caption: string | null
       note: string
     }
   }

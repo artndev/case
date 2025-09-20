@@ -3,6 +3,7 @@
 import { saveWidgets } from '@/app/_contexts/actions'
 import { useBoardContext } from '@/app/_contexts/board-context'
 import { I_WidgetProps } from '@/app/board/_types'
+import LinkPreview from '@/components/custom/link-preview'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -11,27 +12,35 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
 import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Edit2, Loader2, Settings, Trash2 } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
 import Widget from '../widget'
+import { cn } from '@/lib/utils'
+
+const MemoLinkPreview = React.memo(LinkPreview)
 
 const WidgetLink: React.FC<I_WidgetProps> = ({
   widget,
   rowHeight,
   children,
-  className,
   ...props
 }) => {
   const { handleWidgetDelete, setIsDraggable } = useBoardContext()
@@ -40,13 +49,16 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
   const metadata = widget?.metadata ? JSON.parse(widget.metadata) : {}
 
   // States
+  const [url, setUrl] = useState<string>(metadata?.url ?? 'https://google.com/')
+  const [caption, setCaption] = useState<string | undefined>(metadata?.caption)
   const [open, setOpen] = useState<boolean>(false)
 
   const form = useForm<z.infer<typeof validations.WidgetLinkForm.POST.body>>({
     mode: 'onChange',
     resolver: zodResolver(validations.WidgetLinkForm.POST.body),
     defaultValues: {
-      link: metadata?.link ?? 'https://google.com/',
+      url: metadata?.url ?? 'https://google.com/',
+      caption: metadata?.caption,
     },
   })
 
@@ -61,111 +73,132 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
           ...payload,
           metadata: JSON.stringify({
             ...metadata,
-            link: formData.link,
+            url: formData.url,
+            caption:
+              !formData.caption || formData.caption.trim().length === 0
+                ? undefined
+                : formData.caption,
           }),
         },
       ],
-    }).then(() => setOpen(false))
+    }).then(() => {
+      setUrl(formData.url)
+      setCaption(formData.caption)
+
+      setOpen(false)
+    })
   }
 
   useEffect(() => setIsDraggable(!open), [open])
 
   return (
-    <Widget
-      widget={widget}
-      rowHeight={rowHeight}
-      className={cn(!form.formState.isValid && 'border-destructive', className)}
-      {...props}
-    >
-      <div className="w-full min-h-full break-words">
-        <div className="flex flex-col">
-          <div className="flex justify-between items-center p-2">
-            <div className="drag-handle cursor-move font-bold">⠿</div>
-            <div className="no-drag">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Settings />
-                  </Button>
-                </PopoverTrigger>
+    <Widget widget={widget} rowHeight={rowHeight} {...props}>
+      <div className="flex flex-col">
+        <div className="flex justify-between items-center p-2">
+          <div className="drag-handle cursor-move font-bold">⠿</div>
+          <div className="no-drag">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Settings />
+                </Button>
+              </PopoverTrigger>
 
-                <PopoverContent className="no-drag flex flex-col w-[200px] p-0">
-                  {children}
+              <PopoverContent className="no-drag flex flex-col w-[200px] p-0">
+                {children}
 
-                  <hr className="m-2" />
+                <hr className="m-2" />
 
-                  <Button
-                    variant="ghost"
-                    className="justify-start"
-                    onClick={() => handleWidgetDelete(widget.id)}
-                  >
-                    <Trash2 /> Delete
-                  </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start"
+                  onClick={() => handleWidgetDelete(widget.id)}
+                >
+                  <Trash2 /> Delete
+                </Button>
 
-                  <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" className="justify-start">
-                        <Edit2 /> Edit
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader className="gap-6">
-                        <DialogTitle>Make changes</DialogTitle>
+                <Dialog open={open} onOpenChange={setOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" className="justify-start">
+                      <Edit2 /> Edit
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader className="gap-6">
+                      <DialogTitle>Make changes</DialogTitle>
 
-                        <Form {...form}>
-                          <form
-                            onSubmit={form.handleSubmit(onSubmit)}
-                            className="flex flex-col gap-3"
+                      <Form {...form}>
+                        <form
+                          onSubmit={form.handleSubmit(onSubmit)}
+                          className="flex flex-col gap-3"
+                        >
+                          <FormField
+                            control={form.control}
+                            name="url"
+                            rules={{
+                              required: true,
+                            }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>URL</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Today is a url..."
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage className="mr-auto" />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="caption"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Caption</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Today is a caption..."
+                                    {...field}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          <Button
+                            className="mr-auto"
+                            type="submit"
+                            disabled={form.formState.isSubmitting}
                           >
-                            <FormField
-                              control={form.control}
-                              name="link"
-                              rules={{
-                                required: true,
-                              }}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Input
-                                      placeholder="Today is a day..."
-                                      {...field}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-
-                            <Button
-                              className="mr-auto"
-                              type="submit"
-                              disabled={form.formState.isSubmitting}
-                            >
-                              {form.formState.isSubmitting && (
-                                <Loader2 className="animate-spin" />
-                              )}{' '}
-                              Submit
-                            </Button>
-                          </form>
-                        </Form>
-                      </DialogHeader>
-                    </DialogContent>
-                  </Dialog>
-                </PopoverContent>
-              </Popover>
-            </div>
+                            {form.formState.isSubmitting && (
+                              <Loader2 className="animate-spin text-muted-foreground" />
+                            )}{' '}
+                            Submit
+                          </Button>
+                        </form>
+                      </Form>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
+              </PopoverContent>
+            </Popover>
           </div>
+        </div>
 
-          <hr className="m-2 mt-0" />
+        <hr className="mx-2 mb-4" />
 
-          <div className="no-drag p-2 pt-0">
-            <div className="flex flex-col gap-2">
-              <a
-                href={form.getValues().link}
-                className="text-muted-foreground hover:underline"
-              >
-                Today is a link...
-              </a>
-            </div>
+        <div className="no-drag p-2 pt-0">
+          <div className="flex flex-col gap-2">
+            <MemoLinkPreview
+              caption={caption}
+              url={url}
+              subClassName={cn(
+                'transition-all duration-250',
+                widget.size === 'md' && 'w-full'
+              )}
+            />
           </div>
         </div>
       </div>

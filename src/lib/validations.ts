@@ -62,7 +62,8 @@ export default {
   WidgetLinkForm: {
     POST: {
       body: z.object({
-        link: z.string().trim().nonempty(),
+        url: z.string().trim().nonempty().url(),
+        caption: z.string().optional(),
       }),
     },
   },
