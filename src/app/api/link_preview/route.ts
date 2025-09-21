@@ -1,5 +1,8 @@
-import { getLinkPreview } from 'link-preview-js'
+import { beautifyUrl } from '@/lib/utils'
 import { NextResponse } from 'next/server'
+// import chromium from '@sparticuz/chromium'
+// import puppeteer from 'puppeteer-core'
+import puppeteer from 'puppeteer'
 
 export const GET = async (request: Request) => {
   //   const apiKey = request.headers.get('X-Api-Key')
@@ -21,19 +24,52 @@ export const GET = async (request: Request) => {
   }
 
   try {
-    const res = await getLinkPreview(url, {
-      timeout: 5000,
-      followRedirects: 'follow',
+    const browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
     })
+
+    const page = await browser.newPage()
+    await page.setViewport({ width: 1280, height: 720 })
+    await page.setExtraHTTPHeaders({
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    })
+
+    await page.goto(url, {
+      waitUntil: 'domcontentloaded',
+    })
+    await page.waitForSelector('body', {
+      timeout: 30000,
+    })
+
+    const beautifiedUrl = beautifyUrl(url)
+    const title = await page.title()
+    const thumbnail = await page.screenshot({
+      encoding: 'base64',
+      type: 'jpeg',
+      quality: 50,
+      fullPage: true,
+    })
+
+    await browser.close()
 
     return NextResponse.json(
       {
         message: 'Link preview was got successfully',
-        answer: res,
+        answer: {
+          url: {
+            ...beautifiedUrl,
+          },
+          title: title,
+          thumbnail: `data:image/jpeg;base64,${thumbnail}`,
+          favicon: `https://www.google.com/s2/favicons?domain=${url}&sz=64`,
+        },
       },
       { status: 200 }
     )
   } catch (err) {
+    console.log(err)
+
     return NextResponse.json(
       { error: 'Server is not responding' },
       { status: 500 }

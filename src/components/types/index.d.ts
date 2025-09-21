@@ -6,9 +6,9 @@ export interface I_ArrowButtonProps extends React.ComponentProps<'button'> {
 }
 
 export interface I_LinkPreviewProps extends React.ComponentProps<'div'> {
-  caption?: string | null
   url: string
-  subClassName?: string
+  caption?: string | null
+  size: N_WidgetSettings.T_WidgetSize
 }
 
 export {}

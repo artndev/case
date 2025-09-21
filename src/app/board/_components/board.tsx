@@ -76,7 +76,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({ initialWidgetTypes }) => {
           size={'icon'}
           variant={previewMode ? 'default' : 'outline'}
           onClick={() => setPreviewMode(prev => !prev)}
-          className="hidden sm:flex sm:justify-center sm:items-center"
+          className="hidden lg:flex lg:justify-center lg:items-center"
         >
           <Smartphone />
         </Button>
@@ -86,8 +86,8 @@ const BoardRGL: React.FC<I_BoardProps> = ({ initialWidgetTypes }) => {
       <div className="flex justify-center items-center w-full">
         <div
           className={cn(
-            'layout w-full border rounded-md bg-white',
-            previewMode && 'sm:w-[350px] sm:border-10'
+            'layout w-full border rounded-md bg-white lg:w-full w-[350px] min-h-[700px]',
+            previewMode && 'w-[350px]! lg:border-10'
           )}
         >
           <ResponsiveGridLayout

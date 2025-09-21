@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -123,63 +124,67 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
                       <Edit2 /> Edit
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader className="gap-6">
+                  <DialogContent className="gap-4">
+                    <DialogHeader className="gap-2">
                       <DialogTitle>Make changes</DialogTitle>
 
-                      <Form {...form}>
-                        <form
-                          onSubmit={form.handleSubmit(onSubmit)}
-                          className="flex flex-col gap-3"
-                        >
-                          <FormField
-                            control={form.control}
-                            name="url"
-                            rules={{
-                              required: true,
-                            }}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>URL</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="Today is a url..."
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage className="mr-auto" />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="caption"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Caption</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="Today is a caption..."
-                                    {...field}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-
-                          <Button
-                            className="mr-auto"
-                            type="submit"
-                            disabled={form.formState.isSubmitting}
-                          >
-                            {form.formState.isSubmitting && (
-                              <Loader2 className="animate-spin text-muted-foreground" />
-                            )}{' '}
-                            Submit
-                          </Button>
-                        </form>
-                      </Form>
+                      <DialogDescription>
+                        Edit the selected widget-link
+                      </DialogDescription>
                     </DialogHeader>
+
+                    <Form {...form}>
+                      <form
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className="flex flex-col gap-4"
+                      >
+                        <FormField
+                          control={form.control}
+                          name="url"
+                          rules={{
+                            required: true,
+                          }}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>URL</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Today is a url..."
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage className="mr-auto" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="caption"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Caption</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Today is a caption..."
+                                  {...field}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          className="min-w-[100px] ml-auto"
+                          type="submit"
+                          disabled={form.formState.isSubmitting}
+                        >
+                          {form.formState.isSubmitting && (
+                            <Loader2 className="animate-spin text-muted-foreground" />
+                          )}{' '}
+                          Submit
+                        </Button>
+                      </form>
+                    </Form>
                   </DialogContent>
                 </Dialog>
               </PopoverContent>
@@ -191,14 +196,7 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
 
         <div className="no-drag p-2 pt-0">
           <div className="flex flex-col gap-2">
-            <MemoLinkPreview
-              caption={caption}
-              url={url}
-              subClassName={cn(
-                'transition-all duration-250',
-                widget.size === 'md' && 'w-full'
-              )}
-            />
+            <MemoLinkPreview url={url} caption={caption} size={widget.size} />
           </div>
         </div>
       </div>
