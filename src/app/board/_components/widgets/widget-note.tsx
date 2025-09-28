@@ -15,24 +15,26 @@ import { cn } from '@/lib/utils'
 import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Settings, Trash2 } from 'lucide-react'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
 import Widget from '../widget'
+import TextareaAutosize from 'react-textarea-autosize'
 
 const WidgetNote: React.FC<I_WidgetProps> = ({
   widget,
-  rowHeight,
   className,
   ...props
 }) => {
-  const { setLayouts, breakpoint, handleWidgetDelete } = useBoardContext()
+  const { setLayouts, breakpoint, rowHeight, handleWidgetDelete } =
+    useBoardContext()
 
   // Props
   const metadata = widget?.metadata ? JSON.parse(widget.metadata) : {}
 
   // Refs
   const dragContentRef = useRef<HTMLDivElement>(null)
+  const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const prevRows = useRef<number>(0)
 
   // States
@@ -80,42 +82,53 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       Math.ceil((contentHeight + marginY) / (rowHeight + marginY))
     )
 
+    console.log(contentHeight, prevRows.current, newRows)
+
     if (prevRows.current === newRows) {
       return
     }
 
     prevRows.current = newRows
 
+    console.log('SET! to ', newRows)
+
     setLayouts(prev => {
       const currentLayout = prev[breakpoint] || []
+
+      console.log(currentLayout)
 
       return {
         ...prev,
         [breakpoint]: currentLayout.map(lwgt =>
-          lwgt.i === widget.id ? { ...lwgt, h: newRows } : lwgt
+          lwgt.i === widget.id ? { ...lwgt, h: newRows + 1 } : lwgt
         ),
       }
     })
   }
 
-  useEffect(() => {
-    if (!dragContentRef.current) {
+  useLayoutEffect(() => {
+    if (!dragContentRef.current || !textAreaRef.current) {
       return
     }
 
-    const observer = new ResizeObserver(() => adjustHeight())
+    const observer = new ResizeObserver(() => {
+      textAreaRef.current!.style.height = 'auto'
+      textAreaRef.current!.style.height =
+        textAreaRef.current!.scrollHeight + 'px'
+
+      adjustHeight()
+    })
 
     observer.observe(dragContentRef.current, {
       box: 'border-box',
     })
 
     return () => observer.disconnect()
-  }, [])
+  }, [rowHeight, breakpoint])
 
   return (
     <Widget
       widget={widget}
-      rowHeight={rowHeight}
       className={cn(!form.formState.isValid && 'border-destructive', className)}
       {...props}
     >
@@ -188,6 +201,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                         }}
                         readOnly={readOnly}
                         {...field}
+                        ref={textAreaRef}
                       />
                     </FormControl>
                   </FormItem>

@@ -48,7 +48,12 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
   const [layouts, setLayouts] =
     useState<Record<string, Layout[]>>(initialLayouts)
   const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
+  const [rowHeight, setRowHeight] = useState<number>(15)
   const [isDraggable, setIsDraggable] = useState<boolean>(true)
+
+  // useEffect(() => {
+  //   console.log('Changed to ', breakpoint)
+  // }, [breakpoint])
 
   /**
    * Get updated size and cords from layout widgets comparing to original ones
@@ -62,11 +67,8 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
           acc[lwgt.i] = {
             ...acc[lwgt.i],
             [key]: {
-              x: lwgt.x,
-              y: lwgt.y,
-              size: widget
-                ? widget.size // WIDGET_SIZE_MAP[widget.widget_type_details.widget_type][0]
-                : 'sm',
+              ...lwgt,
+              size: widget ? widget.size : 'sm',
             },
           }
         })
@@ -77,9 +79,7 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
         string,
         Record<
           string,
-          {
-            x: number
-            y: number
+          Layout & {
             size: N_WidgetSettings.T_WidgetSize
           }
         >
@@ -137,7 +137,7 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
     () => layoutsToWidgetsAPI(),
     [layouts, widgets]
   )
-
+  // layoutWidgetMeta
   /**
    * Write 'previous' layouts meta for handleDragStop
    */
@@ -170,6 +170,25 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
   }
 
   /**
+   * Handle width change
+   */
+  const handleWidthChange = (
+    containerWidth: number,
+    margin: [number, number],
+    cols: number,
+    containerPadding: [number, number]
+  ) => {
+    const [marginX] = margin
+    const [containerPaddingX] = containerPadding
+
+    const totalMarginX = marginX * (cols - 1)
+    const totalPaddingX = containerPaddingX * 2
+
+    const colWidth = (containerWidth - totalMarginX - totalPaddingX) / cols
+    setRowHeight(Math.round(colWidth))
+  }
+
+  /**
    * Handle layout change (drag or resize)
    */
   const handleLayoutChange = (_: any, allLayouts: ReactGridLayout.Layouts) =>
@@ -181,16 +200,23 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
   ) => {
     const { id, ...payload } = type
 
+    const mdSize = SIZE_MAP[size].md
+    const smSize = SIZE_MAP[size].sm
+
     const widget = {
       id: uuidv4(),
       user_id: userId,
+      /* Size */
+      size,
+      /* Cords */
       x_sm: 0,
       y_sm: Infinity,
       x_md: 0,
       y_md: Infinity,
-      size,
+      /* Widget type */
       widget_type_id: type.id,
       widget_type_details: payload,
+      /* Other */
       metadata: null,
     }
 
@@ -332,6 +358,7 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
         setBreakpoint,
         isDraggable,
         setIsDraggable,
+        rowHeight,
         /* Refs & Memos */
         dirtyWidgets,
         layoutWidgets,
@@ -343,6 +370,7 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
         /* RGL Handlers  */
         handleDragStart,
         handleDragStop,
+        handleWidthChange,
         handleLayoutChange,
       }}
     >

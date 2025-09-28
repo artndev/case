@@ -40,11 +40,10 @@ const MemoLinkPreview = React.memo(LinkPreview)
 
 const WidgetLink: React.FC<I_WidgetProps> = ({
   widget,
-  rowHeight,
   children,
   ...props
 }) => {
-  const { handleWidgetDelete, setIsDraggable } = useBoardContext()
+  const { handleWidgetDelete, setIsDraggable, rowHeight } = useBoardContext()
 
   // Props
   const metadata = widget?.metadata ? JSON.parse(widget.metadata) : {}
@@ -93,7 +92,7 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
   useEffect(() => setIsDraggable(!open), [open])
 
   return (
-    <Widget widget={widget} rowHeight={rowHeight} {...props}>
+    <Widget widget={widget} {...props}>
       <div className="flex flex-col">
         <div className="flex justify-between items-center p-2">
           <div className="drag-handle cursor-move font-bold">⠿</div>

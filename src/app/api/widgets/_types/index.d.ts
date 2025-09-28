@@ -15,11 +15,14 @@ declare global {
     export interface I_Widget {
       id: string
       user_id: string
+
       x_md: number
       y_md: number | null
       x_sm: number
       y_sm: number | null
+
       size: N_WidgetSettings.T_WidgetSize
+
       widget_type_id: string
       widget_type_details: {
         alias: string

@@ -26,8 +26,8 @@ export const SIZE_MAP: Record<
     md: { w: 6, h: 4 },
   },
   'lg-full': {
-    sm: { w: 12, h: 1 },
-    md: { w: 12, h: 1 },
+    sm: { w: 12, h: 4 },
+    md: { w: 12, h: 4 },
   },
 }
 

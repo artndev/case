@@ -23,6 +23,9 @@ export const GET = async (request: Request) => {
     )
   }
 
+  console.log(`Fetching link preview of '${url}'`)
+  const startTime = new Date().getTime()
+
   try {
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -52,6 +55,11 @@ export const GET = async (request: Request) => {
     })
 
     await browser.close()
+
+    const endTime = new Date().getTime()
+    console.log(
+      `Link preview of '${url}' fetched in ${(endTime - startTime) / 1000}s`
+    )
 
     return NextResponse.json(
       {

@@ -23,19 +23,19 @@ const ResponsiveGridLayout = WidthProvider(Responsive)
 const BoardRGL: React.FC<I_BoardProps> = ({ initialWidgetTypes }) => {
   const {
     layouts,
-    breakpoint,
-    setBreakpoint,
     isDraggable,
     layoutWidgets,
+    rowHeight,
+    setBreakpoint,
     addWidget,
     resizeWidget,
     handleDragStart,
     handleDragStop,
     handleLayoutChange,
+    handleWidthChange,
   } = useBoardContext()
 
   const [previewMode, setPreviewMode] = useState<boolean>(false)
-  const [rowHeight, setRowHeight] = useState<number>(15)
 
   // useEffect(() => {
   //   document.cookie = `layouts=${JSON.stringify(layouts)}; path=/`
@@ -91,24 +91,13 @@ const BoardRGL: React.FC<I_BoardProps> = ({ initialWidgetTypes }) => {
           )}
         >
           <ResponsiveGridLayout
-            key={breakpoint + '-' + rowHeight.toString()} // Important part in adjusting size of widget notes
-            layouts={layouts!}
+            // key={breakpoint + '-' + rowHeight.toString()} // Important part in adjusting size of widget notes
+            layouts={layouts}
             breakpoints={BREAKPOINT_MAP}
             cols={COL_MAP}
             rowHeight={rowHeight}
             onLayoutChange={handleLayoutChange}
-            onWidthChange={(containerWidth, margin, cols, containerPadding) => {
-              const [marginX] = margin
-              const [containerPaddingX] = containerPadding
-
-              const totalMarginX = marginX * (cols - 1)
-              const totalPaddingX = containerPaddingX * 2
-
-              const colWidth =
-                (containerWidth - totalMarginX - totalPaddingX) / cols
-
-              setRowHeight(Math.round(colWidth))
-            }}
+            onWidthChange={handleWidthChange}
             onBreakpointChange={newBreakpoint =>
               setBreakpoint(newBreakpoint as N_Board.T_Breakpoint)
             }
@@ -131,7 +120,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({ initialWidgetTypes }) => {
               const Widget = WIDGET_TYPE_MAP[widgetType]
 
               return (
-                <Widget key={wgt.id} rowHeight={rowHeight} widget={wgt}>
+                <Widget key={wgt.id} widget={wgt}>
                   {widgetSizes.length > 1 &&
                     widgetSizes.map(key => (
                       <Button

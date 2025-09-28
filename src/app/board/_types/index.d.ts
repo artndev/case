@@ -13,6 +13,5 @@ export interface I_BoardProps extends React.ComponentProps<'div'> {
 }
 
 export interface I_WidgetProps extends React.ComponentProps<'div'> {
-  rowHeight: number
-  widget: N_Board.I_Widget
+  widget: N_Board.I_LayoutWidget
 }

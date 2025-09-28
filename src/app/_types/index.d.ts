@@ -42,9 +42,10 @@ export interface I_BoardContext {
   setBreakpoint: React.Dispatch<React.SetStateAction<N_Board.T_Breakpoint>>
   isDraggable: boolean
   setIsDraggable: React.Dispatch<React.SetStateAction<boolean>>
+  rowHeight: number
   /* Refs & Memos */
   dirtyWidgets: React.RefObject<Set<string>>
-  layoutWidgets: N_Board.I_Widget[]
+  layoutWidgets: N_Board.I_LayoutWidget[]
   layoutWidgetsAPI: N_Widgets_API.I_Widget[]
   /* RGL Methods */
   addWidget: (
@@ -67,6 +68,12 @@ export interface I_BoardContext {
   >
   handleDragStop: (layout: Layout[]) => void
   handleLayoutChange: (_: any, allLayouts: ReactGridLayout.Layouts) => void
+  handleWidthChange: (
+    containerWidth: number,
+    margin: [number, number],
+    cols: number,
+    containerPadding: [number, number]
+  ) => void
 }
 
 export {}
