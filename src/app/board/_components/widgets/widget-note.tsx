@@ -15,11 +15,10 @@ import { cn } from '@/lib/utils'
 import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Settings, Trash2 } from 'lucide-react'
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { useLayoutEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
 import Widget from '../widget'
-import TextareaAutosize from 'react-textarea-autosize'
 
 const WidgetNote: React.FC<I_WidgetProps> = ({
   widget,
@@ -71,8 +70,8 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       return
     }
 
-    const padding = 0 // 16 // Defined by parent p-2 class
-    const marginY = breakpoint === 'sm' ? 15 : 30 // Set in board properties
+    const padding = 0
+    const marginY = breakpoint === 'sm' ? 15 : 30 // Got value from board properties
 
     const minHeight = 4
     const contentHeight = dragContentRef.current.scrollHeight + padding
@@ -82,25 +81,19 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       Math.ceil((contentHeight + marginY) / (rowHeight + marginY))
     )
 
-    console.log(contentHeight, prevRows.current, newRows)
-
     if (prevRows.current === newRows) {
       return
     }
 
     prevRows.current = newRows
 
-    console.log('SET! to ', newRows)
-
     setLayouts(prev => {
-      const currentLayout = prev[breakpoint] || []
-
-      console.log(currentLayout)
+      const currentLayout = prev[breakpoint]
 
       return {
         ...prev,
         [breakpoint]: currentLayout.map(lwgt =>
-          lwgt.i === widget.id ? { ...lwgt, h: newRows + 1 } : lwgt
+          lwgt.i === widget.id ? { ...lwgt, h: newRows } : lwgt
         ),
       }
     })
