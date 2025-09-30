@@ -62,58 +62,73 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
   return (
     <>
       {data ? (
-        <div
-          className={cn(
-            'flex flex-col gap-2 w-full transition-all duration-250',
-            className
-          )}
-          {...props}
-        >
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              {data || !isLoaded ? (
-                <Button
-                  className="flex justify-center items-center w-[50px] h-[50px] rounded-lg p-0"
-                  variant={'outline'}
-                >
-                  <img src={data.favicon} alt="favicon" />
-                </Button>
-              ) : (
-                <Loader2 className="animate-spin text-muted-foreground" />
-              )}
-            </DialogTrigger>
-
-            <DialogContent className="gap-4">
-              <DialogHeader className="gap-2">
-                <DialogTitle>Are you sure?</DialogTitle>
-
-                <DialogDescription>
-                  You are going to visit the <u>{data.url}</u> website
-                </DialogDescription>
-              </DialogHeader>
-
-              {caption && <span>{caption}</span>}
-
-              <div className="flex gap-4 ml-auto">
-                <a href={data.url} target="_blank">
-                  <Button className="min-w-[100px]">Go</Button>
-                </a>
-
-                <DialogClose asChild>
-                  <Button className="min-w-[100px]" variant={'outline'}>
-                    Cancel
+        <div className={cn('flex gap-8 w-full', className)} {...props}>
+          <div className="flex flex-col gap-4">
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                {data || !isLoaded ? (
+                  <Button
+                    className="flex justify-center items-center w-[50px] h-[50px] rounded-lg p-0"
+                    variant={'outline'}
+                  >
+                    <img src={data.favicon} alt="favicon" />
                   </Button>
-                </DialogClose>
-              </div>
-            </DialogContent>
-          </Dialog>
+                ) : (
+                  <Loader2 className="animate-spin text-muted-foreground" />
+                )}
+              </DialogTrigger>
 
-          <div className="flex flex-col text-sm">
-            {data.url.noTLD}
+              <DialogContent className="gap-4">
+                <DialogHeader className="gap-2">
+                  <DialogTitle>Are you sure?</DialogTitle>
 
-            <a href={data.url} className="text-muted-foreground">
-              {data.url.noHttps}
-            </a>
+                  <DialogDescription>
+                    You are going to visit the <u>{data.url}</u> website
+                  </DialogDescription>
+                </DialogHeader>
+
+                {caption && <span>{caption}</span>}
+
+                <div className="flex gap-4 ml-auto">
+                  <a href={data.url} target="_blank">
+                    <Button className="min-w-[100px]">Go</Button>
+                  </a>
+
+                  <DialogClose asChild>
+                    <Button className="min-w-[100px]" variant={'outline'}>
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <div className="flex flex-col text-sm">
+              {data.url.noTLD}
+
+              <a href={data.url} className="text-muted-foreground">
+                {data.url.noHttps}
+              </a>
+            </div>
+          </div>
+
+          {/* Value for 'translate-x' got with padding of 'MemoLinkPreview', set to p-2 */}
+          <div
+            className={cn(
+              `
+                flex-1 relative border rounded-md overflow-hidden 
+                transition-transform translate-x-[calc(100%_+_var(--spacing)_*_2)] duration-500  
+              `,
+              size === 'md' && 'translate-x-0'
+            )}
+          >
+            <div className="absolute w-full h-full max-h-full overflow-hidden">
+              <img
+                className="w-full h-full object-cover"
+                src={data.thumbnail}
+                alt="thumbnail"
+              />
+            </div>
           </div>
         </div>
       ) : (
@@ -125,23 +140,13 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
           {...props}
         >
           <Button
-            className={cn(
-              'flex justify-center items-center w-[50px] h-[50px] p-0',
-              size === 'md' && 'w-full'
-            )}
+            className="flex justify-center items-center w-[50px] h-[50px] p-0"
             variant={'outline'}
           >
             <Loader2 className="animate-spin text-muted-foreground" />
           </Button>
 
-          <span
-            className={cn(
-              'text-sm text-muted-foreground',
-              size === 'md' && 'text-md'
-            )}
-          >
-            Loading...
-          </span>
+          <span className="text-sm text-muted-foreground">Loading...</span>
         </div>
       )}
     </>
