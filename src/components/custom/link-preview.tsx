@@ -61,21 +61,20 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
 
   return (
     <>
-      {data ? (
-        <div className={cn('flex gap-8 w-full', className)} {...props}>
+      {isLoaded ? (
+        <div
+          className={cn('flex gap-8 w-full overflow-hidden', className)}
+          {...props}
+        >
           <div className="flex flex-col gap-4">
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                {data || !isLoaded ? (
-                  <Button
-                    className="flex justify-center items-center w-[50px] h-[50px] rounded-lg p-0"
-                    variant={'outline'}
-                  >
-                    <img src={data.favicon} alt="favicon" />
-                  </Button>
-                ) : (
-                  <Loader2 className="animate-spin text-muted-foreground" />
-                )}
+                <Button
+                  className="flex justify-center items-center w-[50px] h-[50px] rounded-lg p-2"
+                  variant={'outline'}
+                >
+                  <img src={data!.favicon} alt="favicon" />
+                </Button>
               </DialogTrigger>
 
               <DialogContent className="gap-4">
@@ -83,14 +82,14 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
                   <DialogTitle>Are you sure?</DialogTitle>
 
                   <DialogDescription>
-                    You are going to visit the <u>{data.url}</u> website
+                    You are going to visit the <u>{data!.url}</u> website
                   </DialogDescription>
                 </DialogHeader>
 
                 {caption && <span>{caption}</span>}
 
                 <div className="flex gap-4 ml-auto">
-                  <a href={data.url} target="_blank">
+                  <a href={data!.url} target="_blank">
                     <Button className="min-w-[100px]">Go</Button>
                   </a>
 
@@ -104,10 +103,10 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
             </Dialog>
 
             <div className="flex flex-col text-sm">
-              {data.url.noTLD}
+              {data!.url.noTLD}
 
-              <a href={data.url} className="text-muted-foreground">
-                {data.url.noHttps}
+              <a href={data!.url} className="text-muted-foreground">
+                {data!.url.noHttps}
               </a>
             </div>
           </div>
@@ -125,7 +124,7 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
             <div className="absolute w-full h-full max-h-full overflow-hidden">
               <img
                 className="w-full h-full object-cover"
-                src={data.thumbnail}
+                src={data!.thumbnail}
                 alt="thumbnail"
               />
             </div>
