@@ -344,6 +344,21 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
     }, 50)
   }, [layouts, widgets, breakpoint])
 
+  useEffect(() => {
+    setLayouts(prev => ({
+      ...prev,
+      [breakpoint]: prev[breakpoint].map(lwgt => {
+        const widget = widgets.find(w => w.id === lwgt.i)
+        if (!widget) {
+          return lwgt
+        }
+
+        const { w, h } = SIZE_MAP[widget.size][breakpoint]
+        return { ...lwgt, w, h }
+      }),
+    }))
+  }, [breakpoint])
+
   return (
     <BoardContext.Provider
       value={{

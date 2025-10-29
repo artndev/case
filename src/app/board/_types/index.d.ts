@@ -13,5 +13,5 @@ export interface I_BoardProps extends React.ComponentProps<'div'> {
 }
 
 export interface I_WidgetProps extends React.ComponentProps<'div'> {
-  widget: N_Board.I_LayoutWidget
+  widget: N_Board.I_Widget
 }

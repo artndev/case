@@ -7,7 +7,6 @@ export interface I_ArrowButtonProps extends React.ComponentProps<'button'> {
 
 export interface I_LinkPreviewProps extends React.ComponentProps<'div'> {
   url: string
-  caption?: string | null
   size: N_WidgetSettings.T_WidgetSize
 }
 

@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Settings, Trash2 } from 'lucide-react'
+import { Settings, Trash, Trash2 } from 'lucide-react'
 import React, { useLayoutEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
@@ -125,31 +125,17 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       className={cn(!form.formState.isValid && 'border-destructive', className)}
       {...props}
     >
-      <div className="flex flex-col" ref={dragContentRef}>
-        <div className="flex justify-between items-center p-2">
-          <div className="drag-handle cursor-move font-bold">⠿</div>
-          <div className="no-drag">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Settings />
-                </Button>
-              </PopoverTrigger>
-
-              <PopoverContent className="no-drag flex flex-col w-[200px] p-0">
-                <Button
-                  variant="ghost"
-                  className="justify-start"
-                  onClick={() => handleWidgetDelete(widget.id)}
-                >
-                  <Trash2 /> Delete
-                </Button>
-              </PopoverContent>
-            </Popover>
-          </div>
+      <div className="flex flex-col h-full" ref={dragContentRef}>
+        <div className="flex justify-end px-3 cursor-move">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="justify-end"
+            onClick={() => handleWidgetDelete(widget.id)}
+          >
+            <Trash />
+          </Button>
         </div>
-
-        <hr className="mx-2 mb-4" />
 
         <div className="no-drag">
           <Form {...form}>

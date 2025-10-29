@@ -5,7 +5,8 @@ import { NextResponse } from 'next/server'
 
 // The client you created from the Server-Side Auth instructions
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  let { searchParams, origin } = new URL(request.url)
+  origin = 'https://nongraven-stedfastly-galilea.ngrok-free.dev'
 
   // If "next" is in param, use it as the redirect URL
   let next = searchParams.get('next') ?? '/'
@@ -31,6 +32,8 @@ export async function GET(request: Request) {
   } = await supabase.auth.exchangeCodeForSession(code)
 
   if (sessionError || !session) return NextResponse.redirect(`${origin}/error`)
+
+  await supabase.auth.setSession(session)
 
   // Check for user in profiles table
   const user = await checkUser(session.user.id)

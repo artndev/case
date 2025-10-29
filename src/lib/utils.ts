@@ -16,7 +16,7 @@ export const countNodes = (children: React.ReactNode): number => {
 }
 
 export const beautifyUrl = (url: string): T_BeautifyUrl => {
-  const hostname = new URL(url).hostname
+  const hostname = new URL(decodeURIComponent(url)).hostname
   const beautifiedUrl = hostname.startsWith('www')
     ? hostname.slice(4)
     : hostname
@@ -27,5 +27,6 @@ export const beautifyUrl = (url: string): T_BeautifyUrl => {
     noTLD:
       beautifiedUrl.charAt(0).toUpperCase() +
       beautifiedUrl.split('.')[0].slice(1),
+    noTrail: url.replace(/\/$/, ''),
   }
 }

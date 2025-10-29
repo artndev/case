@@ -1,34 +1,15 @@
-import { updateSession } from '@/utils/supabase/middleware'
-import { NextResponse, type NextRequest } from 'next/server'
+import { secureEndpoint } from '@/utils/supabase/middlewares/secure-endpoint'
+import { updateSession } from '@/utils/supabase/middlewares/update-session'
+import { type NextRequest } from 'next/server'
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL!,
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'X-Api-Key, Content-Type',
-  'Access-Control-Allow-Credentials': 'true',
-}
-
-export async function middleware(request: NextRequest) {
-  const url = request.nextUrl.pathname
+export const middleware = async (req: NextRequest) => {
+  const url = req.nextUrl.pathname
 
   if (!url.startsWith('/api')) {
-    return await updateSession(request)
+    return await updateSession(req)
   }
 
-  if (request.method === 'OPTIONS') {
-    return new NextResponse(null, {
-      status: 204,
-      headers: CORS_HEADERS,
-    })
-  }
-
-  const response = NextResponse.next()
-
-  Object.entries(CORS_HEADERS).forEach(([key, value]) => {
-    response.headers.set(key, value)
-  })
-
-  return response
+  return await secureEndpoint(req)
 }
 
 export const config = {

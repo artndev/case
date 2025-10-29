@@ -119,7 +119,7 @@ const BoardRGL: React.FC<I_BoardProps> = ({ initialWidgetTypes }) => {
               const widgetSizes = WIDGET_SIZE_MAP[widgetType]
               const Widget = WIDGET_TYPE_MAP[widgetType]
 
-              console.log('WidgetType:', widgetType, 'Widget:', Widget)
+              // console.log('WidgetType:', widgetType, 'Widget:', Widget)
 
               return (
                 <Widget key={wgt.id} widget={wgt}>

@@ -3,7 +3,7 @@
 import { saveWidgets } from '@/app/_contexts/actions'
 import { useBoardContext } from '@/app/_contexts/board-context'
 import { I_WidgetProps } from '@/app/board/_types'
-import LinkPreview from '@/components/custom/link-preview'
+import LinkPreview from '@/components/custom/(link-preview)/link-preview'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -27,7 +27,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
 import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Edit2, Loader2, Settings, Trash2 } from 'lucide-react'
@@ -43,22 +42,20 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
   children,
   ...props
 }) => {
-  const { handleWidgetDelete, setIsDraggable, rowHeight } = useBoardContext()
+  const { handleWidgetDelete, setIsDraggable } = useBoardContext()
 
   // Props
   const metadata = widget?.metadata ? JSON.parse(widget.metadata) : {}
 
   // States
-  const [url, setUrl] = useState<string>(metadata?.url ?? 'https://google.com/')
-  const [caption, setCaption] = useState<string | undefined>(metadata?.caption)
+  const [url, setUrl] = useState<string>(metadata?.url ?? 'https://google.com')
   const [open, setOpen] = useState<boolean>(false)
 
   const form = useForm<z.infer<typeof validations.WidgetLinkForm.POST.body>>({
     mode: 'onChange',
     resolver: zodResolver(validations.WidgetLinkForm.POST.body),
     defaultValues: {
-      url: metadata?.url ?? 'https://google.com/',
-      caption: metadata?.caption,
+      url: metadata?.url ?? 'https://google.com',
     },
   })
 
@@ -74,16 +71,11 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
           metadata: JSON.stringify({
             ...metadata,
             url: formData.url,
-            caption:
-              !formData.caption || formData.caption.trim().length === 0
-                ? undefined
-                : formData.caption,
           }),
         },
       ],
     }).then(() => {
       setUrl(formData.url)
-      setCaption(formData.caption)
 
       setOpen(false)
     })
@@ -94,17 +86,21 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
   return (
     <Widget widget={widget} {...props}>
       <div className="flex flex-col h-full">
-        <div className="flex justify-between items-center p-2 ">
-          <div className="drag-handle cursor-move font-bold">⠿</div>
+        <div className="flex justify-end px-3 cursor-move">
           <div className="no-drag">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="justify-end">
                   <Settings />
                 </Button>
               </PopoverTrigger>
 
-              <PopoverContent className="no-drag flex flex-col w-[200px] p-0">
+              <PopoverContent
+                className="no-drag flex flex-col w-[200px] p-0"
+                align="start"
+                side="left"
+                sideOffset={-10}
+              >
                 {children}
 
                 <hr className="m-2" />
@@ -156,21 +152,6 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name="caption"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Caption</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Today is a caption..."
-                                  {...field}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
 
                         <Button
                           className="min-w-[100px] ml-auto"
@@ -191,12 +172,9 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
           </div>
         </div>
 
-        <hr className="mb-4 mx-2" />
-
         <MemoLinkPreview
           className="no-drag flex-1 max-h-full p-2 pt-0"
           url={url}
-          caption={caption}
           size={widget.size}
         />
       </div>

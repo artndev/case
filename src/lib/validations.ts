@@ -1,10 +1,8 @@
+import validator from 'validator'
 import { z } from 'zod'
 import { WIDGET_SIZES } from './constants'
 import * as regexes from './regexes'
 
-/**
- * Validation schemas for everything
- */
 export default {
   SignInForm: {
     POST: {
@@ -25,7 +23,7 @@ export default {
         .refine(
           ({ password, confirmPassword }) => password === confirmPassword,
           {
-            message: 'Passwords do not match',
+            message: "'password' must equal to 'confirmPassword'",
             path: ['confirmPassword'],
           }
         ),
@@ -62,8 +60,23 @@ export default {
   WidgetLinkForm: {
     POST: {
       body: z.object({
-        url: z.string().trim().nonempty().url(),
-        caption: z.string().optional(),
+        url: z
+          .string()
+          .trim()
+          .nonempty()
+          .refine(url =>
+            validator.isURL(url, {
+              protocols: ['http', 'https'],
+              require_protocol: true,
+              require_tld: true,
+              require_host: true,
+              allow_underscores: false,
+              disallow_auth: true,
+              allow_fragments: true,
+              allow_query_components: true,
+            })
+          )
+          .transform(url => url.replace(/\/+$/, '')),
       }),
     },
   },
