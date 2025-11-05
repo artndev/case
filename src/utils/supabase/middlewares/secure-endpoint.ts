@@ -17,7 +17,7 @@ export const secureEndpoint = async (req: NextRequest) => {
 
   const apiKey = req.headers.get('X-Api-Key')
   if (!apiKey || apiKey !== process.env.X_API_KEY) {
-    return new NextResponse('Unauthorized', {
+    return new NextResponse('No access', {
       status: 401,
       headers: CORS_HEADERS,
     })

@@ -2,7 +2,7 @@
 
 import { saveWidgets } from '@/app/_contexts/actions'
 import { useBoardContext } from '@/app/_contexts/board-context'
-import { I_WidgetProps } from '@/app/board/_types'
+import { I_WidgetProps } from '@/app/board/_components/_types'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import {

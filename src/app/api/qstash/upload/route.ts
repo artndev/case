@@ -4,14 +4,6 @@ import { NextResponse } from 'next/server'
 const client = new Client({ token: process.env.QSTASH_TOKEN! })
 
 export const POST = async (req: Request) => {
-  const apiKey = req.headers.get('X-Api-Key')
-  if (apiKey !== process.env.X_API_KEY) {
-    return NextResponse.json(
-      { message: 'Access is forbidden', answer: null },
-      { status: 403 }
-    )
-  }
-
   try {
     const { url } = await req.json()
 

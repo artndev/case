@@ -2,7 +2,7 @@
 
 import { saveWidgets } from '@/app/_contexts/actions'
 import { useBoardContext } from '@/app/_contexts/board-context'
-import { I_WidgetProps } from '@/app/board/_types'
+import { I_WidgetProps } from '@/app/board/_components/_types'
 import LinkPreview from '@/components/custom/(link-preview)/link-preview'
 import { Button } from '@/components/ui/button'
 import {

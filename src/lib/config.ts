@@ -1,6 +1,6 @@
-import Widget1 from '@/app/board/_components/widgets/widget-link'
+import WidgetLink from '@/app/board/_components/widgets/widget-link'
 import WidgetNote from '@/app/board/_components/widgets/widget-note'
-import { I_WidgetProps } from '@/app/board/_types'
+import { I_WidgetProps } from '@/app/board/_components/_types'
 
 export const BREAKPOINT_MAP = { sm: 768, md: 769 }
 
@@ -39,7 +39,7 @@ export const WIDGET_TYPE_MAP: Record<
   React.FC<I_WidgetProps>
 > = {
   'widget-note': WidgetNote,
-  'widget-link': Widget1,
+  'widget-link': WidgetLink,
 }
 
 export const WIDGET_SIZE_MAP: Record<

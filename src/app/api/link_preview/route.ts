@@ -4,14 +4,6 @@ import { I_LinkPreview } from './_types'
 import { beautifyUrl } from '@/lib/utils'
 
 export const GET = async (request: Request) => {
-  const apiKey = request.headers.get('X-Api-Key')
-  if (apiKey !== process.env.X_API_KEY) {
-    return NextResponse.json(
-      { message: 'Access is forbidden', answer: null },
-      { status: 403 }
-    )
-  }
-
   try {
     const { searchParams } = new URL(request.url)
 

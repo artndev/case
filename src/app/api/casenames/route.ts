@@ -2,14 +2,6 @@ import { NextResponse } from 'next/server'
 import { getCasename } from './actions'
 
 export const GET = async (request: Request) => {
-  const apiKey = request.headers.get('X-Api-Key')
-  if (apiKey !== process.env.X_API_KEY) {
-    return NextResponse.json(
-      { message: 'Access is forbidden', answer: null },
-      { status: 401 }
-    )
-  }
-
   const { searchParams } = new URL(request.url)
 
   const name = searchParams.get('name')

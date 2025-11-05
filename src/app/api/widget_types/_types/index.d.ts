@@ -1,4 +1,4 @@
-import { WIDGET_TYPES } from '@/lib/config'
+import { WIDGET_TYPES } from '@/lib/constants'
 
 declare global {
   namespace N_WidgetSettings {

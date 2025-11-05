@@ -45,7 +45,7 @@ export interface I_BoardContext {
   rowHeight: number
   /* Refs & Memos */
   dirtyWidgets: React.RefObject<Set<string>>
-  layoutWidgets: N_Board.I_LayoutWidget[]
+  layoutWidgets: N_Board.I_Widget[]
   layoutWidgetsAPI: N_Widgets_API.I_Widget[]
   /* RGL Methods */
   addWidget: (

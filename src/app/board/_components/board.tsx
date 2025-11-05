@@ -16,7 +16,7 @@ import { Responsive, WidthProvider } from 'react-grid-layout'
 // ? All changes can be inspected in global.css
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
-import { I_BoardProps } from '../_types'
+import { I_BoardProps } from './_types'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
@@ -55,21 +55,23 @@ const BoardRGL: React.FC<I_BoardProps> = ({ initialWidgetTypes }) => {
     <div className="flex flex-col gap-6 max-w-[900px] w-full">
       {/* Controls */}
       <div className="flex flex-col gap-6 self-start">
-        <div className="grid grid-cols-2 gap-6">
-          {initialWidgetTypes.map(type => {
-            const widgetSizes = WIDGET_SIZE_MAP[type.widget_type]
+        {initialWidgetTypes && (
+          <div className="grid grid-cols-2 gap-6">
+            {initialWidgetTypes.map(type => {
+              const widgetSizes = WIDGET_SIZE_MAP[type.widget_type]
 
-            return (
-              <div key={type.id} className="flex flex-col gap-3">
-                {type.alias}
+              return (
+                <div key={type.id} className="flex flex-col gap-3">
+                  {type.alias}
 
-                <Button onClick={() => addWidget(widgetSizes[0], type)}>
-                  Add widget
-                </Button>
-              </div>
-            )
-          })}
-        </div>
+                  <Button onClick={() => addWidget(widgetSizes[0], type)}>
+                    Add widget
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* Preview toggle */}
         <Button

@@ -22,24 +22,37 @@ export const saveWidgets = async (
   return true
 }
 
-export const getWidgets = async (): Promise<
-  N_Widgets_API.I_Widget[] | null
-> => {
+export const getWidgets = async (
+  id?: string | null
+): Promise<N_Widgets_API.I_Widget[] | null> => {
   const supabase = await createClient()
 
-  // RLS automatically adjusts all filters
-  const { data, error } = await supabase.from('widgets').select(
-    `
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    console.log('Error has occurred while fetching widgets', userError)
+    return null
+  }
+
+  //// RLS automatically adjusts all filters
+  const { data, error: selectError } = await supabase
+    .from('widgets')
+    .select(
+      `
       *,
       widget_type_details:widget_types!widgets_widget_type_id_fkey (
         alias,
         widget_type
       )  
     `
-  )
+    )
+    .eq('user_id', id ?? user.id)
 
-  if (error) {
-    console.log('Error has occurred while fetching widgets', error)
+  if (selectError) {
+    console.log('Error has occurred while fetching widgets', selectError)
     return null
   }
 

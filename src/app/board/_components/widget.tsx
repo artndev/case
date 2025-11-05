@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import React from 'react'
-import { I_WidgetProps } from '../_types'
+import { I_WidgetProps } from './_types'
 
 // Attach className only to the top-level div only
 const Widget: React.FC<I_WidgetProps> = ({ className, children, ...props }) => {

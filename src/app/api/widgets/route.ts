@@ -4,15 +4,10 @@ import { ZodError } from 'zod'
 import { deleteWidget, getWidgets, saveWidgets } from './actions'
 
 export const GET = async (request: Request) => {
-  const apiKey = request.headers.get('X-Api-Key')
-  if (apiKey !== process.env.X_API_KEY) {
-    return NextResponse.json(
-      { message: 'Access is forbidden', answer: null },
-      { status: 403 }
-    )
-  }
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
 
-  const res = await getWidgets()
+  const res = await getWidgets(id)
   if (!res) {
     return NextResponse.json(
       { message: 'Server is not responding', answer: null },
@@ -30,14 +25,6 @@ export const GET = async (request: Request) => {
 }
 
 export const POST = async (request: Request) => {
-  const apiKey = request.headers.get('X-Api-Key')
-  if (apiKey !== process.env.X_API_KEY) {
-    return NextResponse.json(
-      { message: 'Access is forbidden', answer: null },
-      { status: 403 }
-    )
-  }
-
   let validBody: N_Widgets_API.POST
   try {
     const body = await request.json()
@@ -79,14 +66,6 @@ export const POST = async (request: Request) => {
 }
 
 export const DELETE = async (request: Request) => {
-  const apiKey = request.headers.get('X-Api-Key')
-  if (apiKey !== process.env.X_API_KEY) {
-    return NextResponse.json(
-      { message: 'Access is forbidden', answer: null },
-      { status: 403 }
-    )
-  }
-
   const { searchParams } = new URL(request.url)
 
   const id = searchParams.get('id')
