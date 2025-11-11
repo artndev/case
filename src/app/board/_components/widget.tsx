@@ -5,7 +5,11 @@ import { I_WidgetProps } from './_types'
 // Attach className only to the top-level div only
 const Widget: React.FC<I_WidgetProps> = ({ className, children, ...props }) => {
   return (
-    <div className={cn('border rounded-sm bg-white', className)} {...props}>
+    // Applied 'overflow-hidden' to prevent the widget's header overflow
+    <div
+      className={cn('border rounded-sm bg-white overflow-hidden', className)}
+      {...props}
+    >
       {children}
     </div>
   )

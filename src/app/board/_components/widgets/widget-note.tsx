@@ -5,16 +5,11 @@ import { useBoardContext } from '@/app/_contexts/board-context'
 import { I_WidgetProps } from '@/app/board/_components/_types'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Settings, Trash, Trash2 } from 'lucide-react'
+import { Trash } from 'lucide-react'
 import React, { useLayoutEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
@@ -22,6 +17,7 @@ import Widget from '../widget'
 
 const WidgetNote: React.FC<I_WidgetProps> = ({
   widget,
+  isInspected = false,
   className,
   ...props
 }) => {
@@ -46,6 +42,9 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       note: metadata?.note ?? 'Today is a note...',
     },
   })
+
+  // Timeouts
+  const adjustTimeout = useRef<NodeJS.Timeout | null>(null)
 
   const onSubmit = async (
     formData: z.infer<typeof validations.WidgetNoteForm.POST.body>
@@ -81,6 +80,8 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       Math.ceil((contentHeight + marginY) / (rowHeight + marginY))
     )
 
+    console.log(contentHeight, prevRows.current, newRows)
+
     if (prevRows.current === newRows) {
       return
     }
@@ -109,7 +110,12 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       textAreaRef.current!.style.height =
         textAreaRef.current!.scrollHeight + 'px'
 
-      adjustHeight()
+      if (adjustTimeout.current) {
+        clearTimeout(adjustTimeout.current)
+      }
+
+      // 'setTimeout' is here because we need to wait until the moment the resizing stops
+      adjustTimeout.current = setTimeout(() => adjustHeight(), 150)
     })
 
     observer.observe(dragContentRef.current, {
@@ -117,7 +123,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
     })
 
     return () => observer.disconnect()
-  }, [rowHeight, breakpoint])
+  }, [rowHeight]) // rowHeight <=> breakpoint
 
   return (
     <Widget
@@ -125,19 +131,28 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       className={cn(!form.formState.isValid && 'border-destructive', className)}
       {...props}
     >
-      <div className="flex flex-col h-full" ref={dragContentRef}>
-        <div className="flex justify-end px-3 cursor-move">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="justify-end"
-            onClick={() => handleWidgetDelete(widget.id)}
-          >
-            <Trash />
-          </Button>
-        </div>
+      <div className="flex flex-col" ref={dragContentRef}>
+        {!isInspected && (
+          <div className="flex">
+            <div className="flex-1 flex items-center cursor-move">
+              <div className="flex justify-center items-center w-min h-full p-2">
+                {'⠿'}
+              </div>
+            </div>
 
-        <div className="no-drag">
+            <div className="no-drag">
+              <Button
+                variant="ghost"
+                className="w-min h-full p-2!"
+                onClick={() => handleWidgetDelete(widget.id)}
+              >
+                <Trash />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className={cn('no-drag relative h-full', isInspected && 'pt-2')}>
           <Form {...form}>
             <form className="flex flex-col gap-2">
               <FormField
@@ -178,7 +193,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                           e.currentTarget.style.height =
                             e.currentTarget.scrollHeight + 'px'
                         }}
-                        readOnly={readOnly}
+                        readOnly={isInspected ?? readOnly}
                         {...field}
                         ref={textAreaRef}
                       />

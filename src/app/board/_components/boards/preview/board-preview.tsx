@@ -38,7 +38,7 @@ const BoardPreviewRGL = () => {
         const widgetType = wgt.widget_type_details.widget_type
         const Widget = WIDGET_TYPE_MAP[widgetType]
 
-        return <Widget key={wgt.id} widget={wgt} />
+        return <Widget key={wgt.id} widget={wgt} isInspected />
       })}
     </RGL>
   )

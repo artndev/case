@@ -39,6 +39,7 @@ const MemoLinkPreview = React.memo(LinkPreview)
 
 const WidgetLink: React.FC<I_WidgetProps> = ({
   widget,
+  isInspected = false,
   children,
   ...props
 }) => {

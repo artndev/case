@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Layout } from 'react-grid-layout'
 import BoardPreview from './board-preview'
+import { cn } from '@/lib/utils'
 
 const Board = async ({ params }: { params: { casename: string } }) => {
   const { casename } = params
@@ -61,10 +62,10 @@ const Board = async ({ params }: { params: { casename: string } }) => {
 
   return (
     <div
-      className={`
-        flex justify-center items-center w-screen min-h-screen p-[10px]
-        [&_button]:pointer-events-none [&_input]:pointer-events-none [&_textarea]:pointer-events-none
-      `}
+      className={cn(
+        'flex justify-center items-center w-screen min-h-screen p-[10px]',
+        // '[&_button]:pointer-events-none [&_input]:pointer-events-none [&_textarea]:pointer-events-none'
+      )}
     >
       <BoardPreview initialLayouts={layouts} initialWidgets={widgets} />
     </div>

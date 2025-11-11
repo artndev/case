@@ -32,4 +32,5 @@ export interface I_BoardPropsTest<T = void, U = void>
 
 export interface I_WidgetProps extends React.ComponentProps<'div'> {
   widget: N_Board.I_Widget
+  isInspected?: boolean
 }
