@@ -1,6 +1,6 @@
 'use client'
 
-import { SIZE_MAP } from '@/lib/config'
+import { DELETE_TIMEOUT, SAVE_TIMEOUT, SIZE_MAP } from '@/lib/config'
 import React, {
   createContext,
   useContext,
@@ -12,7 +12,7 @@ import React, {
 import { Layout } from 'react-grid-layout'
 import { v4 as uuidv4 } from 'uuid'
 import { I_BoardContext, I_BoardContextProps } from '../_types'
-import { saveWidgets, deleteWidget } from './actions'
+import { deleteWidget, saveWidgets } from './actions'
 
 const BoardContext = createContext<I_BoardContext>({} as I_BoardContext)
 export const BoardProvider: React.FC<I_BoardContextProps> = ({
@@ -22,69 +22,46 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
   children,
 }) => {
   // Timeouts
-  const saveTimeout = useRef<NodeJS.Timeout | null>(null)
-  // Timeout for adding widget, update optionally in future
+  // Timeout of adding widget (will be updated optionally in future)
   // const addTimeout = useRef<NodeJS.Timeout | null>(null)
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null)
   const deleteTimeout = useRef<NodeJS.Timeout | null>(null)
 
   // Refs
   const dirtyWidgets = useRef<Set<string>>(new Set())
-  const prevLayoutMeta = useRef<
-    Record<
-      string,
-      Record<
-        string,
-        {
-          x: number
-          y: number
-          size: N_WidgetSettings.T_WidgetSize
-        }
-      >
-    >
-  >({})
+  const prevLayoutMeta = useRef<N_Board.I_LayoutsMeta>({})
 
   // States
+  // Initial values are taken from DB
   const [widgets, setWidgets] = useState<N_Board.I_Widget[]>(initialWidgets)
   const [layouts, setLayouts] =
     useState<Record<string, Layout[]>>(initialLayouts)
   const [breakpoint, setBreakpoint] = useState<N_Board.T_Breakpoint>('md')
+
   const [rowHeight, setRowHeight] = useState<number>(15)
   const [isDraggable, setIsDraggable] = useState<boolean>(true)
 
-  // useEffect(() => {
-  //   console.log('Changed to ', breakpoint)
-  // }, [breakpoint])
+  // ============ Layouts meta logic ============
 
   /**
-   * Get updated size and cords from layout widgets comparing to original ones
+   * Get updated size and coords from layout widgets comparing to original ones
    */
   const getLayoutsMeta = () => {
-    return Object.entries(layouts).reduce(
-      (acc, [key, val]) => {
-        val.forEach(lwgt => {
-          const widget = widgets.find(w => w.id === lwgt.i)
+    return Object.entries(layouts).reduce((acc, [key, val]) => {
+      val.forEach(lwgt => {
+        const widget = widgets.find(w => w.id === lwgt.i)
 
-          acc[lwgt.i] = {
-            ...acc[lwgt.i],
-            [key]: {
-              ...lwgt,
-              size: widget ? widget.size : 'sm',
-            },
-          }
-        })
+        acc[lwgt.i] = {
+          ...acc[lwgt.i],
+          [key]: {
+            ...lwgt,
+            size: widget ? widget.size : 'sm',
+          },
+        }
+      })
 
-        return acc
-      },
-      {} as Record<
-        string,
-        Record<
-          string,
-          Layout & {
-            size: N_WidgetSettings.T_WidgetSize
-          }
-        >
-      >
-    )
+      return acc
+    }, {} as N_Board.I_LayoutsMeta)
   }
 
   /**
@@ -107,7 +84,7 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
    * y_[breakpoint] = y
    */
   const layoutsToWidgetsAPI = () => {
-    /* Same size for each breakpoint but different alignment */
+    // Same size for each breakpoint but different alignment
     return widgets
       .filter(({ id }) => dirtyWidgets.current.has(id))
       .map(({ widget_type_details, ...payload }) => ({
@@ -124,20 +101,17 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
       }))
   }
 
-  /* Memorized values to prevent from unnecessary calls */
-
+  // Memorized values to prevent from unnecessary calls
   const layoutsMeta = useMemo(() => getLayoutsMeta(), [layouts])
-
   const layoutWidgets = useMemo(
     () => layoutToWidgets(),
     [layouts, widgets, breakpoint]
   )
-
   const layoutWidgetsAPI = useMemo(
     () => layoutsToWidgetsAPI(),
     [layouts, widgets]
   )
-  // layoutWidgetMeta
+
   /**
    * Write 'previous' layouts meta for handleDragStop
    */
@@ -169,8 +143,102 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
     })
   }
 
+  // ============ Main logic ============
+
+  ///// TODO: Reduce y-variables from 'Infinity' to zero ones
   /**
-   * Handle width change
+   * Add widget to board
+   */
+  const addWidget = (
+    size: N_WidgetSettings.T_WidgetSize,
+    type: N_Widgets.I_WidgetType
+  ) => {
+    const { id: widget_type_id, ...widget_type_details } = type
+
+    const widget = {
+      /* IDs */
+      id: uuidv4(),
+      user_id: userId,
+      /* Size */
+      size,
+      /* Coords */
+      x_sm: 0,
+      y_sm: 0,
+      x_md: 0,
+      y_md: 0,
+      /* Widget type */
+      widget_type_id,
+      widget_type_details,
+      /* Other */
+      metadata: null,
+    }
+
+    setWidgets(prev => [...prev, widget])
+
+    setLayouts(prev => ({
+      ...Object.entries(prev).reduce(
+        (acc, [key, val]) => {
+          acc[key] = [
+            ...val,
+            {
+              i: widget.id,
+              x: 0,
+              y: 0,
+              w: SIZE_MAP[size][breakpoint].w,
+              h: SIZE_MAP[size][breakpoint].h,
+              static: false,
+            },
+          ]
+
+          return acc
+        },
+        {} as typeof prev
+      ),
+    }))
+
+    dirtyWidgets.current.add(widget.id)
+  }
+
+  ///// TODO: Dive into case when size is same
+  /**
+   * Resize widget on board
+   * @param id Actually, it's layout widget's 'i' property
+   */
+  const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
+    const widget = widgets.find(w => w.id === id)
+
+    if (!widget || widget.size === size) {
+      return
+    }
+
+    setWidgets(prev =>
+      prev.map(wgt => (wgt.id === id ? { ...wgt, size } : wgt))
+    )
+
+    setLayouts(prev => ({
+      ...Object.entries(prev).reduce(
+        (acc, [key, val]) => {
+          acc[key] = val.map(lwgt =>
+            lwgt.i === id
+              ? {
+                  ...lwgt,
+                  w: SIZE_MAP[size][breakpoint].w,
+                  h: SIZE_MAP[size][breakpoint].h,
+                }
+              : lwgt
+          )
+
+          return acc
+        },
+        {} as typeof prev
+      ),
+    }))
+
+    dirtyWidgets.current.add(id)
+  }
+
+  /**
+   * Calculate row height using formula taken from RGL docs
    */
   const handleWidthChange = (
     containerWidth: number,
@@ -189,105 +257,22 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
   }
 
   /**
-   * Handle layout change (drag or resize)
+   * Wrapper for handling layout changes (e.g. drag or resize)
    */
   const handleLayoutChange = (_: any, allLayouts: ReactGridLayout.Layouts) =>
     setLayouts(allLayouts)
 
-  const addWidget = (
-    size: N_WidgetSettings.T_WidgetSize,
-    type: N_Widgets.I_WidgetType
-  ) => {
-    const { id, ...payload } = type
+  // ============ Serverless logic ============
 
-    const mdSize = SIZE_MAP[size].md
-    const smSize = SIZE_MAP[size].sm
-
-    const widget = {
-      id: uuidv4(),
-      user_id: userId,
-      /* Size */
-      size,
-      /* Cords */
-      x_sm: 0,
-      y_sm: Infinity,
-      x_md: 0,
-      y_md: Infinity,
-      /* Widget type */
-      widget_type_id: type.id,
-      widget_type_details: payload,
-      /* Other */
-      metadata: null,
-    }
-
-    setWidgets(prev => [...prev, widget])
-
-    setLayouts(prev => ({
-      ...Object.entries(prev).reduce(
-        (acc, [key, val]) => {
-          acc[key] = [
-            ...val,
-            {
-              i: widget.id,
-              x: 0,
-              y: Infinity,
-              w: SIZE_MAP[size][breakpoint].w,
-              h: SIZE_MAP[size][breakpoint].h,
-              static: false,
-            },
-          ]
-
-          return acc
-        },
-        {} as Record<string, Layout[]>
-      ),
-    }))
-
-    dirtyWidgets.current.add(widget.id)
-  }
-
-  const resizeWidget = (id: string, size: N_WidgetSettings.T_WidgetSize) => {
-    setWidgets(prev =>
-      prev.map(wgt =>
-        wgt.id === id
-          ? {
-              ...wgt,
-              size,
-            }
-          : wgt
-      )
-    )
-
-    setLayouts(prev => ({
-      ...Object.entries(prev).reduce(
-        (acc, [key, val]) => {
-          acc[key] = val.map(lwgt =>
-            lwgt.i === id
-              ? {
-                  ...lwgt,
-                  w: SIZE_MAP[size][breakpoint].w,
-                  h: SIZE_MAP[size][breakpoint].h,
-                }
-              : lwgt
-          )
-
-          return acc
-        },
-        {} as Record<string, Layout[]>
-      ),
-    }))
-
-    dirtyWidgets.current.add(id)
-  }
-
-  /* DB integration */
-
+  /**
+   * Wrapper for deleting widget from board
+   */
   const handleWidgetDelete = async (id: string) => {
     if (deleteTimeout.current) {
       clearTimeout(deleteTimeout.current)
     }
 
-    const start = () => {
+    const invoke = () => {
       setWidgets(prev => prev.filter(wgt => wgt.id !== id))
 
       setLayouts(prev => ({
@@ -297,21 +282,24 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
 
             return acc
           },
-          {} as Record<string, Layout[]>
+          {} as typeof prev
         ),
       }))
 
-      // Consider to add only widget with provided id
+      // Consider to add only widget with provided id for recalculation
+      // to optimize amount of calls to backend
       widgets.map(({ id }) => id).forEach(id => dirtyWidgets.current.add(id))
     }
 
     deleteTimeout.current = setTimeout(() => {
       deleteWidget(id)
-        .then(() => start())
+        .then(() => invoke())
         .catch(err => console.log(err))
-    }, 50)
+    }, DELETE_TIMEOUT)
   }
 
+  // 'Moderating dirtyWidgets changes' is meant to be seeking for any changes of
+  // widgets themselves (e.g. size, position, type)
   useEffect(() => {
     if (dirtyWidgets.current.size === 0) {
       return
@@ -322,6 +310,7 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
     }
 
     saveTimeout.current = setTimeout(() => {
+      // Preparing payload from STABLE bench of widgets in API format
       const dirtyPayload = layoutWidgetsAPI.filter(w =>
         dirtyWidgets.current.has(w.id)
       )
@@ -330,31 +319,29 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
         return
       }
 
+      // Also clearing happens when error occurs to prevent from infinite loops
       saveWidgets({
         widgets: dirtyPayload,
       })
-        .then(() => {
-          // console.log('Saved: ', dirtyPayload)
-
-          dirtyWidgets.current.clear()
-        })
+        .finally(() => dirtyWidgets.current.clear()) // <-- Here!
         .catch(err => console.log(err))
-
-      dirtyWidgets.current.clear()
-    }, 50)
+    }, SAVE_TIMEOUT)
   }, [layouts, widgets, breakpoint])
 
+  // ============ Other ============
+
+  // Handle cases of different sizes ('w' and 'h' properties) depending on active breakpoint
   useEffect(() => {
     setLayouts(prev => ({
       ...prev,
       [breakpoint]: prev[breakpoint].map(lwgt => {
-        const widget = widgets.find(w => w.id === lwgt.i)
+        const widget = widgets.find(wgt => wgt.id === lwgt.i)
+
         if (!widget) {
           return lwgt
         }
 
-        const { w, h } = SIZE_MAP[widget.size][breakpoint]
-        return { ...lwgt, w, h }
+        return { ...lwgt, ...SIZE_MAP[widget.size][breakpoint] }
       }),
     }))
   }, [breakpoint])
@@ -380,8 +367,8 @@ export const BoardProvider: React.FC<I_BoardContextProps> = ({
         layoutWidgetsAPI,
         /* RGL Methods */
         addWidget,
-        handleWidgetDelete,
         resizeWidget,
+        handleWidgetDelete,
         /* RGL Handlers  */
         handleDragStart,
         handleDragStop,

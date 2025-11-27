@@ -33,6 +33,10 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
     }
   )
 
+  useEffect(() => {
+    console.log(data)
+  }, [data])
+
   return (
     <>
       {data ? (
@@ -41,17 +45,19 @@ const LinkPreview: React.FC<I_LinkPreviewProps> = ({
           {...props}
         >
           <div className="flex flex-col gap-2">
-            <Button
-              className="flex justify-center items-center w-[50px] h-[50px] rounded-lg p-2"
-              variant={'outline'}
-            >
-              <img src={data!.favicon} alt="favicon" />
-            </Button>
+            <a href={data!.url.source}>
+              <Button
+                className="flex justify-center items-center w-[50px] h-[50px] rounded-lg p-2"
+                variant={'outline'}
+              >
+                <img src={data!.favicon} alt="favicon" />
+              </Button>
+            </a>
 
             <div className="flex flex-col text-sm">
               {data!.url.noTLD}
 
-              <a href={data!.url} className="text-muted-foreground">
+              <a href={data!.url.source} className="text-muted-foreground">
                 {data!.url.noHttps}
               </a>
             </div>

@@ -2,8 +2,10 @@ import WidgetLink from '@/app/board/_components/widgets/widget-link'
 import WidgetNote from '@/app/board/_components/widgets/widget-note'
 import { I_WidgetProps } from '@/app/board/_components/_types'
 
-export const BREAKPOINT_MAP = { sm: 768, md: 769 }
+export const DELETE_TIMEOUT = 50
+export const SAVE_TIMEOUT = 50
 
+export const BREAKPOINT_MAP = { sm: 768, md: 769 }
 export const COL_MAP = { sm: 6, md: 12 }
 
 /**
@@ -26,7 +28,9 @@ export const SIZE_MAP: Record<
     md: { w: 6, h: 4 },
   },
   'lg-full': {
-    sm: { w: 12, h: 4 },
+    // Don't return the 'w' property back to 12 cols, or otherwise
+    // it wont't shrink when the screen resolution is changed
+    sm: { w: 6, h: 4 },
     md: { w: 12, h: 4 },
   },
 }

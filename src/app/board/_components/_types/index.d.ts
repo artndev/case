@@ -4,6 +4,17 @@ declare global {
   namespace N_Board {
     interface I_Widget extends Omit<N_Widgets.I_Widget, 'created_at'> {}
 
+    interface I_LayoutsMeta
+      extends Record<
+        string,
+        Record<
+          string,
+          Layout & {
+            size: N_WidgetSettings.T_WidgetSize
+          }
+        >
+      > {}
+
     type T_Breakpoint = 'md' | 'sm'
   }
 }

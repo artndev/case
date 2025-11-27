@@ -53,7 +53,7 @@ const Board = async () => {
         acc[breakpoint] = widgets.map(wgt => ({
           i: wgt.id,
           x: wgt[breakpoint === 'md' ? 'x_md' : 'x_sm'],
-          y: wgt[breakpoint === 'md' ? 'y_md' : 'y_sm'] ?? Infinity,
+          y: wgt[breakpoint === 'md' ? 'y_md' : 'y_sm'] ?? 0,
           w: SIZE_MAP[wgt.size][breakpoint].w,
           h: SIZE_MAP[wgt.size][breakpoint].h,
           static: false,

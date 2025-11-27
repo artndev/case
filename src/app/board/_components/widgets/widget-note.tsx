@@ -10,10 +10,11 @@ import { cn } from '@/lib/utils'
 import validations from '@/lib/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Trash } from 'lucide-react'
-import React, { useLayoutEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
 import Widget from '../widget'
+import { SIZE_MAP } from '@/lib/config'
 
 const WidgetNote: React.FC<I_WidgetProps> = ({
   widget,
@@ -80,7 +81,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
       Math.ceil((contentHeight + marginY) / (rowHeight + marginY))
     )
 
-    console.log(contentHeight, prevRows.current, newRows)
+    console.log(contentHeight, prevRows.current, newRows, breakpoint)
 
     if (prevRows.current === newRows) {
       return
@@ -93,9 +94,16 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
 
       return {
         ...prev,
-        [breakpoint]: currentLayout.map(lwgt =>
-          lwgt.i === widget.id ? { ...lwgt, h: newRows } : lwgt
-        ),
+        [breakpoint]: currentLayout.map(lwgt => {
+          // console.log(lwgt)
+
+          return lwgt.i === widget.id
+            ? {
+                ...lwgt,
+                h: newRows,
+              }
+            : lwgt
+        }),
       }
     })
   }
@@ -106,6 +114,8 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
     }
 
     const observer = new ResizeObserver(() => {
+      console.log('Observed')
+
       textAreaRef.current!.style.height = 'auto'
       textAreaRef.current!.style.height =
         textAreaRef.current!.scrollHeight + 'px'
@@ -124,6 +134,7 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
 
     return () => observer.disconnect()
   }, [rowHeight]) // rowHeight <=> breakpoint
+  // ! Add dependency to preview button
 
   return (
     <Widget
@@ -170,6 +181,8 @@ const WidgetNote: React.FC<I_WidgetProps> = ({
                             resize-none text-base! border-0 outline-none shadow-none overflow-hidden p-2 pt-0
                             focus:ring-0 focus-visible:ring-0 focus-visible:outline-none aria-invalid:ring-0
                           `,
+                          // Hides blinking caret (cursor) while inspecting
+                          isInspected && 'caret-transparent',
                           readOnly && 'cursor-pointer'
                         )}
                         onKeyDown={e => {

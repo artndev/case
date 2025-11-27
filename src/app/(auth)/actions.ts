@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { I_StatePayload } from '../_types'
 
 export const validateCaseName = async (
-  caseName: string
+  casename: string
 ): Promise<boolean | null> => {
   return axios
     .get<I_AxiosResponse<boolean>>('/api/casenames', {
@@ -18,7 +18,7 @@ export const validateCaseName = async (
         'X-API-KEY': process.env.API_KEY!,
       },
       params: {
-        value: caseName,
+        value: casename,
       },
     })
     .then(({ data }) => data.answer)
@@ -45,18 +45,34 @@ export const signIn = async (formData: FormData): Promise<void> => {
     password: formData.get('password') as string,
   })
 
-  if (error) redirect('/error')
+  if (error) {
+    redirect('/error')
+  }
 
   revalidatePath('/', 'layout')
   redirect('/')
 }
 
+/*
+BEGIN
+  IF COALESCE(NEW.raw_app_meta_data ->> 'provider', '') = 'email' THEN
+    INSERT INTO public.profiles (id, email)
+    VALUES (NEW.id, NEW.email);
+
+    INSERT INTO public.casenames (user_id, casename)
+    VALUES (NEW.id, NEW.raw_user_meta_data ->> 'casename');
+  END IF;
+
+  RETURN NEW;
+END;
+*/
 export const signUp = async (formData: FormData): Promise<void> => {
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: formData.get('email') as string,
     password: formData.get('password') as string,
+    // Passing options to raw_user_meta_data in the provided trigger
     options: {
       data: {
         casename: formData.get('casename') as string,
@@ -64,19 +80,23 @@ export const signUp = async (formData: FormData): Promise<void> => {
     },
   })
 
-  if (error) redirect('/error')
+  if (!data.user || error) {
+    console.log(data.user, error, formData)
+
+    redirect('/error')
+  }
 
   redirect('/auth/success')
 }
 
 export const signInWithOAuth = async (
   provider: Provider,
-  caseName?: string
+  casename?: string
 ): Promise<void> => {
   const supabase = await createClient()
 
-  const state = caseName
-    ? createState({ casename: caseName, type: 'sign-up' })
+  const state = casename
+    ? createState({ casename, type: 'sign-up' })
     : createState({ type: 'sign-in' })
 
   const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`)
@@ -89,9 +109,13 @@ export const signInWithOAuth = async (
     },
   })
 
-  if (error) console.log(error)
+  if (error) {
+    console.log(error)
+  }
 
-  if (!data.url) return
+  if (!data.url) {
+    return
+  }
 
   redirect(data.url)
 }
@@ -103,7 +127,9 @@ export const resetPassword = async (formData: FormData) => {
     formData.get('email') as string
   )
 
-  if (error) redirect('/error')
+  if (error) {
+    redirect('/error')
+  }
 
   redirect('/auth/success')
 }
@@ -115,7 +141,9 @@ export const updatePassword = async (formData: FormData) => {
     password: formData.get('password') as string,
   })
 
-  if (error) redirect('/error')
+  if (error) {
+    redirect('/error')
+  }
 
   revalidatePath('/', 'layout')
   redirect('/')

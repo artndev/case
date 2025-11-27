@@ -1,14 +1,14 @@
 'use server'
 
-import { createAdminClient } from '@/utils/supabase/admin'
+import { createClient } from '@/utils/supabase/server'
 
 export const getCasename = async (
   casename: string
 ): Promise<boolean | null> => {
-  const supabase = await createAdminClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('profiles')
+    .from('casenames')
     .select('casename')
     .eq('casename', casename)
     .maybeSingle()

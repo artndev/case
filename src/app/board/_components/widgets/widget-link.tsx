@@ -34,6 +34,7 @@ import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import z from 'zod'
 import Widget from '../widget'
+import { cn } from '@/lib/utils'
 
 const MemoLinkPreview = React.memo(LinkPreview)
 
@@ -49,7 +50,7 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
   const metadata = widget?.metadata ? JSON.parse(widget.metadata) : {}
 
   // States
-  const [url, setUrl] = useState<string>(metadata?.url ?? 'https://google.com')
+  const [url, setUrl] = useState<string>(metadata?.url || 'https://google.com')
   const [open, setOpen] = useState<boolean>(false)
 
   const form = useForm<z.infer<typeof validations.WidgetLinkForm.POST.body>>({
@@ -59,6 +60,10 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
       url: metadata?.url ?? 'https://google.com',
     },
   })
+
+  useEffect(() => {
+    console.log(url)
+  }, [url])
 
   const onSubmit = async (
     formData: z.infer<typeof validations.WidgetLinkForm.POST.body>
@@ -87,94 +92,104 @@ const WidgetLink: React.FC<I_WidgetProps> = ({
   return (
     <Widget widget={widget} {...props}>
       <div className="flex flex-col h-full">
-        <div className="flex justify-end px-3 cursor-move">
-          <div className="no-drag">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="justify-end">
-                  <Settings />
-                </Button>
-              </PopoverTrigger>
+        {!isInspected && (
+          <div className="flex">
+            <div className="flex-1 flex items-center cursor-move">
+              <div className="flex justify-center items-center w-min h-full p-2">
+                {'⠿'}
+              </div>
+            </div>
 
-              <PopoverContent
-                className="no-drag flex flex-col w-[200px] p-0"
-                align="start"
-                side="left"
-                sideOffset={-10}
-              >
-                {children}
+            <div className="no-drag">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" className="w-min h-full p-2!">
+                    <Settings />
+                  </Button>
+                </PopoverTrigger>
 
-                <hr className="m-2" />
-
-                <Button
-                  variant="ghost"
-                  className="justify-start"
-                  onClick={() => handleWidgetDelete(widget.id)}
+                <PopoverContent
+                  className="no-drag flex flex-col w-[200px] p-0"
+                  align="start"
+                  side="left"
                 >
-                  <Trash2 /> Delete
-                </Button>
+                  {children}
 
-                <Dialog open={open} onOpenChange={setOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" className="justify-start">
-                      <Edit2 /> Edit
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="gap-4">
-                    <DialogHeader className="gap-2">
-                      <DialogTitle>Make changes</DialogTitle>
+                  <hr className="m-2" />
 
-                      <DialogDescription>
-                        Edit the selected widget-link
-                      </DialogDescription>
-                    </DialogHeader>
+                  <Button
+                    variant="ghost"
+                    className="justify-start"
+                    onClick={() => handleWidgetDelete(widget.id)}
+                  >
+                    <Trash2 /> Delete
+                  </Button>
 
-                    <Form {...form}>
-                      <form
-                        onSubmit={form.handleSubmit(onSubmit)}
-                        className="flex flex-col gap-4"
-                      >
-                        <FormField
-                          control={form.control}
-                          name="url"
-                          rules={{
-                            required: true,
-                          }}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>URL</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Today is a url..."
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage className="mr-auto" />
-                            </FormItem>
-                          )}
-                        />
+                  <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" className="justify-start">
+                        <Edit2 /> Edit
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="gap-4">
+                      <DialogHeader className="gap-2">
+                        <DialogTitle>Make changes</DialogTitle>
 
-                        <Button
-                          className="min-w-[100px] ml-auto"
-                          type="submit"
-                          disabled={form.formState.isSubmitting}
+                        <DialogDescription>
+                          Edit the selected widget-link
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <Form {...form}>
+                        <form
+                          onSubmit={form.handleSubmit(onSubmit)}
+                          className="flex flex-col gap-4"
                         >
-                          {form.formState.isSubmitting && (
-                            <Loader2 className="animate-spin text-muted-foreground" />
-                          )}{' '}
-                          Submit
-                        </Button>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-              </PopoverContent>
-            </Popover>
+                          <FormField
+                            control={form.control}
+                            name="url"
+                            rules={{
+                              required: true,
+                            }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>URL</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Today is a url..."
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage className="mr-auto" />
+                              </FormItem>
+                            )}
+                          />
+
+                          <Button
+                            className="min-w-[100px] ml-auto"
+                            type="submit"
+                            disabled={form.formState.isSubmitting}
+                          >
+                            {form.formState.isSubmitting && (
+                              <Loader2 className="animate-spin text-muted-foreground" />
+                            )}{' '}
+                            Submit
+                          </Button>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
-        </div>
+        )}
 
         <MemoLinkPreview
-          className="no-drag flex-1 max-h-full p-2 pt-0"
+          className={cn(
+            'no-drag flex-1 max-h-full p-2 pt-0',
+            isInspected && 'pt-2'
+          )}
           url={url}
           size={widget.size}
         />

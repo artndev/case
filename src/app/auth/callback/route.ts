@@ -15,15 +15,27 @@ export async function GET(request: Request) {
   if (!next.startsWith('/')) next = '/'
 
   const code = searchParams.get('code')
-  if (!code) return NextResponse.redirect(`${origin}/error`)
+  if (!code) {
+    console.log('No code provided in the callback URL')
+
+    return NextResponse.redirect(`${origin}/error`)
+  }
 
   const state = searchParams.get('state')
   // console.log('STATE: ', state)
-  if (!state) return NextResponse.redirect(`${origin}/error`)
+  if (!state) {
+    console.log('No state provided in the callback URL')
+
+    return NextResponse.redirect(`${origin}/error`)
+  }
 
   const statePayload = verifyState(state)
   // console.log('STATE_PAYLOAD: ', statePayload)
-  if (!statePayload) return NextResponse.redirect(`${origin}/error`)
+  if (!statePayload) {
+    console.log('State could not be verified')
+
+    return NextResponse.redirect(`${origin}/error`)
+  }
 
   const supabase = await createClient()
   const {
@@ -31,7 +43,11 @@ export async function GET(request: Request) {
     error: sessionError,
   } = await supabase.auth.exchangeCodeForSession(code)
 
-  if (sessionError || !session) return NextResponse.redirect(`${origin}/error`)
+  if (sessionError || !session) {
+    console.log('Error exchanging code for session:', sessionError)
+
+    return NextResponse.redirect(`${origin}/error?id=4`)
+  }
 
   await supabase.auth.setSession(session)
 
@@ -39,7 +55,11 @@ export async function GET(request: Request) {
   const user = await checkUser(session.user.id)
 
   // Wait for any errors
-  if (user === null) return NextResponse.redirect(`${origin}/error`)
+  if (user === null) {
+    console.log('Error checking user in profiles table')
+
+    return NextResponse.redirect(`${origin}/error`)
+  }
 
   const supabaseAdmin = await createAdminClient()
 
@@ -49,19 +69,37 @@ export async function GET(request: Request) {
       session.user.id
     )
 
-    if (deleteError) return NextResponse.redirect(`${origin}/error`)
+    if (deleteError) {
+      console.log('Error deleting user without profile:', deleteError)
+
+      return NextResponse.redirect(`${origin}/error`)
+    }
 
     return NextResponse.redirect(`${origin}/sign-up`)
   }
 
   if (statePayload.type === 'sign-up' && user === false) {
-    const { error: insertError } = await supabase.from('profiles').insert({
+    const { error: profileError } = await supabase.from('profiles').insert({
       id: session.user.id,
       email: session.user.email,
+    })
+
+    if (profileError) {
+      console.log('Error creating profile for new user:', profileError)
+
+      return NextResponse.redirect(`${origin}/sign-out`)
+    }
+
+    const { error: casenameError } = await supabase.from('casenames').insert({
+      user_id: session.user.id,
       casename: statePayload.casename,
     })
 
-    if (insertError) return NextResponse.redirect(`${origin}/sign-out`)
+    if (casenameError) {
+      console.log('Error creating casename for new user:', casenameError)
+
+      return NextResponse.redirect(`${origin}/sign-out`)
+    }
   }
 
   // Original origin before load balancer

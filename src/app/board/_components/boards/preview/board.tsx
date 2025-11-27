@@ -47,7 +47,7 @@ const Board = async ({ params }: { params: { casename: string } }) => {
         acc[breakpoint] = widgets.map(wgt => ({
           i: wgt.id,
           x: wgt[breakpoint === 'md' ? 'x_md' : 'x_sm'],
-          y: wgt[breakpoint === 'md' ? 'y_md' : 'y_sm'] ?? Infinity,
+          y: wgt[breakpoint === 'md' ? 'y_md' : 'y_sm'] ?? 0,
           w: SIZE_MAP[wgt.size][breakpoint].w,
           h: SIZE_MAP[wgt.size][breakpoint].h,
           static: true, // Only in sight of the preview mode
@@ -63,7 +63,7 @@ const Board = async ({ params }: { params: { casename: string } }) => {
   return (
     <div
       className={cn(
-        'flex justify-center items-center w-screen min-h-screen p-[10px]',
+        'flex justify-center items-center w-screen min-h-screen p-[10px]'
         // '[&_button]:pointer-events-none [&_input]:pointer-events-none [&_textarea]:pointer-events-none'
       )}
     >
