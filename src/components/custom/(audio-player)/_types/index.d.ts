@@ -6,6 +6,7 @@ export interface I_FrequencyChartProps {
 export type T_Size = {
   width: number
   height: number
+  minHeight: number
 }
 
 export type T_Point = {

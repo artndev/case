@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { getTrack } from './actions'
 import { FFT_SIZE } from '@/lib/config'
+import { clamp } from 'lodash'
+import { useEffect, useRef, useState } from 'react'
+import { getTrack } from './actions'
 
 const useAudioPlayer = (src: string) => {
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [freqs, setFreqs] = useState<Uint8Array>(new Uint8Array())
 
   const pausedTimeRef = useRef<number>(0)
@@ -15,43 +16,74 @@ const useAudioPlayer = (src: string) => {
   const audioBufferRef = useRef<AudioBuffer | null>(null)
   const audioBufferSourceRef = useRef<AudioBufferSourceNode | null>(null)
 
-  const toggle = useCallback(() => {
-    if (isPlaying) {
-      audioBufferSourceRef.current?.stop()
-      pausedTimeRef.current = 0
-      startTimeRef.current = 0
-    } else {
-      if (!audioContextRef.current || !audioAnalyserRef.current) {
-        return
-      }
-
-      audioBufferSourceRef.current =
-        audioContextRef.current.createBufferSource()
-      audioBufferSourceRef.current.buffer = audioBufferRef.current!
-      audioBufferSourceRef.current.connect(audioAnalyserRef.current)
-
-      startTimeRef.current = audioContextRef.current.currentTime
-      audioBufferSourceRef.current.start()
-
-      requestAnimationFrame(draw)
+  const startPlayback = (offset = 0) => {
+    if (!audioBufferRef.current || !audioContextRef.current) {
+      return
     }
 
-    setIsPlaying(prev => !prev)
-  }, [isPlaying])
+    audioBufferSourceRef.current?.stop()
+    audioBufferSourceRef.current = audioContextRef.current.createBufferSource()
+    audioBufferSourceRef.current.buffer = audioBufferRef.current
+    audioBufferSourceRef.current.connect(audioAnalyserRef.current!)
+
+    startTimeRef.current = audioContextRef.current.currentTime
+    pausedTimeRef.current = offset
+
+    audioBufferSourceRef.current.start(0, offset)
+    requestAnimationFrame(draw)
+  }
+
+  const toggle = () => {
+    if (!audioBufferRef.current) {
+      return
+    }
+
+    if (pausedTimeRef.current >= audioBufferRef.current.duration) {
+      startPlayback()
+      setIsPlaying(true)
+      return
+    }
+
+    if (!isPlaying) {
+      startPlayback(pausedTimeRef.current)
+      setIsPlaying(true)
+      return
+    }
+
+    pausedTimeRef.current = getCurrentPlaybackTime()
+    audioBufferSourceRef.current?.stop()
+    setIsPlaying(false)
+  }
+
+  const seek = (value: number) => {
+    if (!audioBufferRef.current) {
+      return
+    }
+
+    pausedTimeRef.current = clamp(value, 0, audioBufferRef.current.duration)
+
+    if (!isPlaying) {
+      return
+    }
+
+    startPlayback(pausedTimeRef.current)
+  }
 
   const getCurrentPlaybackTime = () => {
-    if (!audioContextRef.current) {
+    if (!audioContextRef.current || !audioBufferRef.current) {
       return 0
     }
 
-    if (isPlaying) {
-      return (
-        pausedTimeRef.current +
-        (audioContextRef.current.currentTime - startTimeRef.current)
-      )
+    if (!isPlaying) {
+      return pausedTimeRef.current
     }
 
-    return pausedTimeRef.current
+    return clamp(
+      pausedTimeRef.current +
+        (audioContextRef.current.currentTime - startTimeRef.current),
+      0,
+      audioBufferRef.current.duration
+    )
   }
 
   const percentComplete =
@@ -79,7 +111,7 @@ const useAudioPlayer = (src: string) => {
     if (!audioAnalyserRef.current) {
       audioAnalyserRef.current = audioContextRef.current.createAnalyser()
       audioAnalyserRef.current.fftSize = FFT_SIZE
-      audioAnalyserRef.current.smoothingTimeConstant = 0.8
+      audioAnalyserRef.current.smoothingTimeConstant = 0.9
       audioAnalyserRef.current.connect(audioContextRef.current.destination)
     }
 
@@ -108,7 +140,8 @@ const useAudioPlayer = (src: string) => {
     isLoading,
     freqs,
     toggle,
-    percentComplete,
+    seek,
+    percentComplete: percentComplete * 100,
     audioBuffer: audioBufferRef.current,
   }
 }
