@@ -8,6 +8,10 @@ export const SAVE_TIMEOUT = 50
 export const BREAKPOINT_MAP = { sm: 768, md: 769 }
 export const COL_MAP = { sm: 6, md: 12 }
 
+// Audio player
+export const FFT_SIZE = 256
+export const GROUP_SIZE = 32
+
 /**
  * Map each widget size to its grid dimensions
  */

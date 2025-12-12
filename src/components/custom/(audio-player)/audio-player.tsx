@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import React from 'react'
 import useAudioPlayer from './_hooks/use-audio-player'
 import FrequencyChart from './frequency-chart'
+import { FFT_SIZE } from '@/lib/config'
 
 const AudioPlayer: React.FC<I_AudioPlayerProps> = ({ volume = 0.25 }) => {
   const { isPlaying, isLoading, freqs, toggle, percentComplete, audioBuffer } =
@@ -14,13 +15,19 @@ const AudioPlayer: React.FC<I_AudioPlayerProps> = ({ volume = 0.25 }) => {
 
   return (
     <>
-      {!isLoading && (
+      <div className="flex gap-3">
+        <FrequencyChart data={freqs} dataSize={FFT_SIZE / 2} />
+
+        <Button onClick={() => toggle()}>Toggle</Button>
+      </div>
+
+      {/* {!isLoading && (
         <div className="flex gap-3">
-          <FrequencyChart data={freqs} dataSize={512 / 2} />
+          <FrequencyChart data={freqs} dataSize={FFT_SIZE / 2} />
 
           <Button onClick={() => toggle()}>Toggle</Button>
         </div>
-      )}
+      )} */}
     </>
   )
 }

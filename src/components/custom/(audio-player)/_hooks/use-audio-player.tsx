@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getTrack } from './actions'
+import { FFT_SIZE } from '@/lib/config'
 
 const useAudioPlayer = (src: string) => {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -77,7 +78,7 @@ const useAudioPlayer = (src: string) => {
 
     if (!audioAnalyserRef.current) {
       audioAnalyserRef.current = audioContextRef.current.createAnalyser()
-      audioAnalyserRef.current.fftSize = 512
+      audioAnalyserRef.current.fftSize = FFT_SIZE
       audioAnalyserRef.current.smoothingTimeConstant = 0.8
       audioAnalyserRef.current.connect(audioContextRef.current.destination)
     }
