@@ -10,4 +10,8 @@ export interface I_LinkPreviewProps extends React.ComponentProps<'div'> {
   size: N_WidgetSettings.T_WidgetSize
 }
 
+export interface I_AudioPlayerProps extends React.ComponentProps<'div'> {
+  volume?: number
+}
+
 export {}

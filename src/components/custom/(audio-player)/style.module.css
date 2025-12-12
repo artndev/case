@@ -1,0 +1,54 @@
+.vinyl {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+}
+
+.vinyl::before {
+  content: '';
+  position: absolute;
+  border-radius: inherit;
+  width: 100%;
+  height: 100%;
+  background-image:
+    conic-gradient(
+      from 45deg,
+      rgb(255 255 255 / 0.1),
+      transparent 6.25% 43.75%,
+      rgb(255 255 255 / 0.1) 50%,
+      transparent 56.25% 93.75%,
+      rgb(255 255 255 / 0.1)
+    ),
+    radial-gradient(farthest-side, transparent 95%, #17151b 95% 100%),
+    radial-gradient(
+      farthest-side,
+      rgb(255 255 255 / 0.06) 40%,
+      rgb(0 0 0 / 0.1) 40% calc(40% + 1px),
+      rgb(0 0 0 / 0.1) calc(40% + 1px) 48%,
+      rgba(255, 255, 255, 0.05) 48% calc(48% + 1px),
+      transparent 0
+    ),
+    radial-gradient(
+      farthest-side,
+      transparent 64%,
+      rgb(255 255 255 / 0.006) 64% calc(64% + 1px),
+      transparent calc(64% + 1px) 82%,
+      rgb(255 255 255 / 0.006) 82% calc(82% + 1px),
+      transparent 0
+    ),
+    repeating-radial-gradient(
+      farthest-side,
+      rgb(255 255 255 / 0.006) 0 1px,
+      transparent 1px 2px
+    ),
+    repeating-radial-gradient(
+      farthest-side,
+      rgb(255 255 255 / 0.006) 0 1px,
+      transparent 1px 5px
+    ),
+    repeating-radial-gradient(farthest-side, #131118, #131118 12.5%);
+}

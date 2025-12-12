@@ -1,6 +1,5 @@
 'use client'
 
-import { useBoardContext } from '@/app/_contexts/board-context'
 import { I_LinkPreview } from '@/app/api/link_preview/_types'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
