@@ -1,4 +1,6 @@
-export interface I_FrequencyChartProps {
+import { StageProps } from 'react-konva'
+
+export interface I_FrequencyChartProps extends StageProps {
   data: Uint8Array
   dataSize: number
 }

@@ -1,6 +1,6 @@
 import { FFT_SIZE } from '@/lib/config'
 import { clamp } from 'lodash'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getTrack } from './actions'
 
 const useAudioPlayer = (src: string) => {
@@ -8,6 +8,7 @@ const useAudioPlayer = (src: string) => {
   const [isLoading, setIsLoading] = useState(true)
   const [freqs, setFreqs] = useState<Uint8Array>(new Uint8Array())
 
+  const isPlayingRef = useRef<boolean>(isPlaying)
   const pausedTimeRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
 
@@ -89,8 +90,18 @@ const useAudioPlayer = (src: string) => {
   const percentComplete =
     getCurrentPlaybackTime() / (audioBufferRef.current?.duration ?? 1)
 
-  const draw = () => {
+  useEffect(() => {
+    isPlayingRef.current = isPlaying
+  }, [isPlaying])
+
+  const draw = useCallback(() => {
     if (!audioAnalyserRef.current) {
+      return
+    }
+
+    // TODO: Such an sharp animation is happening over here
+    if (!isPlayingRef.current) {
+      setFreqs(new Uint8Array(0))
       return
     }
 
@@ -101,7 +112,7 @@ const useAudioPlayer = (src: string) => {
     setFreqs(freqsArray)
 
     requestAnimationFrame(draw)
-  }
+  }, [])
 
   useEffect(() => {
     if (!audioContextRef.current) {

@@ -7,6 +7,7 @@ import { FFT_SIZE } from '@/lib/config'
 import React, { useEffect, useState } from 'react'
 import useAudioPlayer from './_hooks/use-audio-player'
 import FrequencyChart from './frequency-chart'
+import { Pause, Play } from 'lucide-react'
 
 const AudioPlayer: React.FC<I_AudioPlayerProps> = ({ volume = 0.25 }) => {
   const {
@@ -34,8 +35,17 @@ const AudioPlayer: React.FC<I_AudioPlayerProps> = ({ volume = 0.25 }) => {
   return (
     <>
       {!isLoading && (
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          <Button
+            className="rounded-full hover:scale-95"
+            size={'icon'}
+            onClick={() => toggle()}
+          >
+            {isPlaying ? <Pause /> : <Play />}
+          </Button>
+
           <Slider
+            className="max-w-[200px] hover:cursor-pointer"
             defaultValue={[0]}
             value={[sliderValue]}
             max={100}
@@ -50,9 +60,7 @@ const AudioPlayer: React.FC<I_AudioPlayerProps> = ({ volume = 0.25 }) => {
             onPointerDown={() => setIsDragging(true)}
           />
 
-          <FrequencyChart data={freqs} dataSize={FFT_SIZE / 2} />
-
-          <Button onClick={() => toggle()}>Toggle</Button>
+          <FrequencyChart className="" data={freqs} dataSize={FFT_SIZE / 2} />
         </div>
       )}
     </>
